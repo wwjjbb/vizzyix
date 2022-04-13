@@ -1,0 +1,10 @@
+﻿---
+AllowShortBlocksOnASingleLine: 'false'
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: 'false'
+BreakBeforeBraces: Linux
+IndentWidth: '4'
+TabWidth: '4'
+
+...

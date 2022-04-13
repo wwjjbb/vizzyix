@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   sodipodi:docname="eyeball.svg"
+   inkscape:version="1.0 (4035a4fb49, 2020-05-01)"
+   id="svg909"
+   version="1.1"
+   viewBox="0 0 129.22462 68.252022"
+   height="257.96039"
+   width="488.40802">
+  <defs
+     id="defs903" />
+  <sodipodi:namedview
+     units="px"
+     fit-margin-bottom="0"
+     fit-margin-right="0"
+     fit-margin-left="0"
+     fit-margin-top="0"
+     inkscape:window-maximized="1"
+     inkscape:window-y="0"
+     inkscape:window-x="0"
+     inkscape:window-height="1015"
+     inkscape:window-width="1920"
+     showgrid="false"
+     inkscape:document-rotation="0"
+     inkscape:current-layer="layer2"
+     inkscape:document-units="mm"
+     inkscape:cy="180.28052"
+     inkscape:cx="231.45486"
+     inkscape:zoom="0.98994949"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0.0"
+     borderopacity="1.0"
+     bordercolor="#666666"
+     pagecolor="#ffffff"
+     id="base">
+    <inkscape:grid
+       id="grid1633"
+       type="xygrid" />
+  </sodipodi:namedview>
+  <metadata
+     id="metadata906">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+        <cc:license
+           rdf:resource="http://creativecommons.org/publicdomain/zero/1.0/" />
+        <dc:creator>
+          <cc:Agent>
+            <dc:title>Bill Binder</dc:title>
+          </cc:Agent>
+        </dc:creator>
+        <dc:rights>
+          <cc:Agent>
+            <dc:title># SPDX-FileCopyrightText: 2020 Bill Binder &lt;dxtwjb@gmail.com&gt;
+#
+# SPDX-License-Identifier: CC0-1.0
+#</dc:title>
+          </cc:Agent>
+        </dc:rights>
+      </cc:Work>
+      <cc:License
+         rdf:about="http://creativecommons.org/publicdomain/zero/1.0/">
+        <cc:permits
+           rdf:resource="http://creativecommons.org/ns#Reproduction" />
+        <cc:permits
+           rdf:resource="http://creativecommons.org/ns#Distribution" />
+        <cc:permits
+           rdf:resource="http://creativecommons.org/ns#DerivativeWorks" />
+      </cc:License>
+    </rdf:RDF>
+  </metadata>
+  <g
+     style="display:inline"
+     transform="translate(-6.3936111,-37.630725)"
+     inkscape:label="eyeball"
+     id="layer2"
+     inkscape:groupmode="layer">
+    <ellipse
+       ry="28.578228"
+       rx="28.970181"
+       cy="70.220352"
+       cx="78.740341"
+       id="path1502"
+       style="opacity:1;fill:#68982f;fill-opacity:0.706575;stroke:#000000;stroke-width:1.66603;stroke-opacity:1" />
+    <ellipse
+       ry="15.083548"
+       rx="16.003693"
+       cy="70.676682"
+       cx="81.120438"
+       id="path1504"
+       style="opacity:1;fill:#171717;fill-opacity:1;stroke:#000000;stroke-width:3.2023;stroke-opacity:1" />
+    <ellipse
+       ry="2.80633"
+       rx="2.7699199"
+       cy="81.104805"
+       cx="80.883743"
+       id="path1506"
+       style="opacity:1;fill:#ffffff;fill-opacity:1;stroke:#ffffff;stroke-width:1.5;stroke-opacity:1" />
+    <path
+       transform="matrix(0.26458333,0,0,0.26458333,6.3936111,37.630725)"
+       id="path1631"
+       d="m 238.52593,244.33114 c -1.94455,-0.22947 -8.08122,-0.89592 -13.63706,-1.481 C 159.70617,235.9858 93.253545,202.08415 48.780893,153.0064 39.246336,142.48455 25.830511,125.06115 19.421442,114.8767 l -3.335127,-5.29975 5.406326,-6.24219 C 27.994743,95.827385 45.027894,80.309288 55.598228,72.262778 94.750101,42.458996 139.70337,23.35458 187.51387,16.200752 202.75206,13.92068 227.16046,12.537095 239.1762,13.272286 l 10.70304,0.654871 -7.44442,1.924851 c -14.51194,3.752244 -31.96201,13.333498 -45.0633,24.74275 -18.14159,15.798612 -32.22185,41.775608 -35.68156,65.829742 -1.86299,12.95263 -0.70479,33.71938 2.5356,45.46391 19.17198,69.48729 97.78344,103.25161 162.27591,69.69893 30.3869,-15.80899 51.51587,-44.2336 58.02923,-78.06617 2.03338,-10.56205 2.03338,-30.06648 0,-40.62854 -4.1557,-21.586109 -14.18646,-40.914143 -29.76205,-57.34779 -6.89017,-7.269745 -5.46191,-7.048961 10.53142,1.62798 40.53623,21.992318 74.03632,52.189888 99.41611,89.6154 3.93524,5.80298 7.15498,11.07455 7.15498,11.71461 0,1.79051 -27.71687,28.43956 -37.37564,35.9357 -40.39737,31.3523 -88.96786,51.50294 -140.91628,58.46253 -8.34501,1.118 -48.79407,2.16871 -55.05331,1.43008 z"
+       style="color:#000000;clip-rule:nonzero;display:inline;overflow:visible;visibility:visible;opacity:1;isolation:auto;mix-blend-mode:normal;color-interpolation:sRGB;color-interpolation-filters:linearRGB;solid-color:#000000;solid-opacity:1;fill:#fffff7;fill-opacity:1;fill-rule:nonzero;stroke:#000000;stroke-width:1.01015;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;color-rendering:auto;image-rendering:auto;shape-rendering:auto;text-rendering:auto;enable-background:accumulate" />
+  </g>
+  <g
+     style="display:inline"
+     transform="translate(-6.3936111,-37.630725)"
+     id="layer1"
+     inkscape:groupmode="layer"
+     inkscape:label="Layer 1">
+    <path
+       d="M 67.214448,39.288395 A 76.468998,75.134088 0 0 0 8.4149019,66.38645 76.468998,75.134088 0 0 0 74.797404,104.22508 76.468998,75.134088 0 0 0 133.59695,77.127021 76.468998,75.134088 0 0 0 67.214448,39.288395 Z"
+       style="opacity:1;fill:#ffffff;fill-opacity:0;stroke:#000000;stroke-width:3.31534;stroke-opacity:1"
+       id="path1481" />
+  </g>
+</svg>

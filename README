@@ -1,0 +1,82 @@
+>> SPDX-FileCopyrightText: 2022 Bill Binder <dxtwjb@gmail.com>
+>> SPDX-License-Identifier: GPL-2.0-only
+
+Vizzyix - a portage package browser
+
+This is a package browser which uses eix to search the package database, and a
+Qt GUI to show the results. That's it really; it doesn't need permissions for
+building packages because it doesn't do building, which means it can run with
+normal user permissions.
+
+DEPENDENCIES
+
+Dynamically linked to:
+    * Qt5 (Core, Gui, Svg)
+    * Protobuf
+
+Requires >=app-portage/eix-0.34.11 to be built with protobuf support, and for the
+"eix.proto" file from the eix source archive to be installed at /usr/share/eix.
+
+HtmlBuilder (https://github.com/SRombauts/HtmlBuilder) - A simple C++ header-only
+HTML 5 Generator library, using a Document Object Model (DOM). MIT Licence.
+Bundled with project for now.
+
+SOURCE
+
+Written in C++ (C++17).
+
+The project is configured to use clang-format to manage format of the code. This
+is controlled by the top level file, ".clang-format".
+
+BUILD
+
+    * Using meson
+         Create a new directory and cd into it
+         Unpack the source archive and cd into it's top directory
+         $ meson ../meson-build
+         $ cd ../meson-build
+         $ meson compile
+
+    * Using qmake
+         Create a new directory and cd into it
+         Unpack the source archive and cd into it's top directory
+         $ mkdir ../qmake-build
+         $ cd ../qmake-build
+         $ qmake ../vizzyix
+         $ make
+
+The qmake build is only for convenience when using qt-creator. Retaining
+till qt-creator support for meson gets better; it's not good in 2022.
+
+
+TESTS
+
+There are some basic tests - these may be run from the Tools | Test menu in
+QtCreator, or in meson by running this in the meson build directory:
+
+  $ meson test
+
+DEPLOY
+
+The application source archive is generated along with an ebuild file:
+
+  * Firstly:
+
+    * Set the version number in line 6 of the top-level meson.build file. Try
+      not to change any of the formatting on the line because the qmake build
+      also needs the version number and extracts it from here using a bash
+      script (scripts/mkconfig).
+
+    * Commit any outstanding changes (because meson generates the package with
+      the last committed files, not those in working directory).
+
+  * Locate the top-level "scripts" directory and cd into it.
+
+  * Run ./mkpackage
+
+  * The distribution archive is generated and tested using the "meson dist"
+    command - this unpacks the archive into a clean directory and runs the
+    unit tests.
+
+  * If this looks good, the archive file and the matching ebuild file are
+    placed into "script/files" directory ready for installation.

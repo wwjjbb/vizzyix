@@ -1,0 +1,14 @@
+<RCC>
+    <qresource prefix="/pkgtable">
+        <file>images/installed-marker.png</file>
+        <file>images/installed-world-marker.png</file>
+        <file>images/world-only-marker.png</file>
+        <file>images/all-marker.png</file>
+        <file>images/installed-system-marker.png</file>
+        <file>images/installed-world-set-marker.png</file>
+    </qresource>
+    <qresource prefix="/app">
+        <file>images/eyeball.png</file>
+        <file>images/eyeball.svg</file>
+    </qresource>
+</RCC>

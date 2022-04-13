@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# SPDX-FileCopyrightText: 2020 Bill Binder <dxtwjb@gmail.com>
+#
+# SPDX-License-Identifier: CC0-1.0
+
+# This does not appear to work. Better off trying to automate GIMP?
+
+for xcf in *.xcf
+do
+    echo $xcf
+    exiftool -v $xcf -overwrite_original_in_place ${xcf%.xcf}.png
+    # exiftool -v -tagsfromfile $xcf -overwrite_original_in_place ${xcf%.xcf}.png
+done

@@ -25,9 +25,35 @@ AboutDialog::AboutDialog(QWidget *parent)
     ui->versionLabel->setText("Version: " APPVERSION);
 
     ui->tab->setCurrentIndex(0);
+
+    // Connect the URL-clicked signals
+
+    connect(ui->licenseInfo,
+            QOverload<const QUrl &>::of(&QTextBrowser::anchorClicked), this,
+            &AboutDialog::onLinkClicked);
 }
 
 AboutDialog::~AboutDialog()
 {
     delete ui;
+}
+
+void AboutDialog::onLinkClicked(const QUrl &)
+{
+    // Not used, but would allow local links to be handled.
+    // Two examples - diverting a link with a specific filetype
+    // to show a local file (in the control), and how to catch
+    // a 'back' button.
+
+    /*
+     QString filetype = QFileInfo(url.fileName()).suffix();
+     if (filetype == "ebuild") {
+         QString filename = QFileInfo(url.fileName()).fileName();
+         showEbuildSource(url, filename);
+     }
+     if (url.path() == "BACK" && html != nullptr) {
+         ui->packageDescription->setHtml(
+             QString::fromStdString(html->toString()));
+     }
+    */
 }

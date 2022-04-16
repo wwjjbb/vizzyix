@@ -19,6 +19,9 @@ class AboutDialog : public QDialog
     explicit AboutDialog(QWidget *parent = nullptr);
     ~AboutDialog();
 
+  private slots:
+    void onLinkClicked(const QUrl &url);
+
   private:
     Ui::AboutDialog *ui;
 };

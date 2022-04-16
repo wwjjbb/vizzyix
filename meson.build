@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: CC0-1.0
 
 project('vizzyix', 'cpp',
-        version : '0.1.0',
+        version : '0.1.1',
         license : 'GPL-2.0-only',
         default_options : [
             'prefix=/usr',

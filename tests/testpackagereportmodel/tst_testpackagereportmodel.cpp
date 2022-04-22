@@ -21,7 +21,8 @@ class testpackagereportmodel : public QObject
     void test_headerData();
     void test_addPackage();
     void test_clear();
-    void test_data_fetch_data_role();
+    void test_data_fetch_data_role_a();
+    void test_data_fetch_data_role_b();
     void test_packageItem();
 
   private:
@@ -64,7 +65,7 @@ void testpackagereportmodel::test_construction()
     PackageReportModel something;
 
     QCOMPARE(something.rowCount(dummy), 0);
-    QCOMPARE(something.columnCount(), 4);
+    QCOMPARE(something.columnCount(), 5);
 }
 
 void testpackagereportmodel::test_headerData()
@@ -73,11 +74,17 @@ void testpackagereportmodel::test_headerData()
 
     // A reminder to keep the case statement in headerData() in sync with the
     // data cols
-    QVERIFY(PackageReportItem::columnCount() == 4);
+    QVERIFY(PackageReportItem::columnCount() == 5);
 
     QCOMPARE(something.headerData(PackageReportItem::Column::Installed,
                                   Qt::Horizontal),
              QVariant());
+    QCOMPARE(something.headerData(PackageReportItem::Column::InstalledVersion,
+                                  Qt::Horizontal),
+             QVariant("Version"));
+    QCOMPARE(something.headerData(PackageReportItem::Column::AvailableVersion,
+                                  Qt::Horizontal),
+             QVariant("Available"));
     QCOMPARE(
         something.headerData(PackageReportItem::Column::Name, Qt::Horizontal),
         QVariant("Package"));
@@ -117,7 +124,7 @@ void testpackagereportmodel::test_clear()
     QCOMPARE(something.rowCount(), 0);
 }
 
-void testpackagereportmodel::test_data_fetch_data_role()
+void testpackagereportmodel::test_data_fetch_data_role_a()
 {
     PackageReportModel something;
 
@@ -128,10 +135,20 @@ void testpackagereportmodel::test_data_fetch_data_role()
     something.addPackage(cat.category(), pkg1, emptyVersionList);
     something.addPackage(cat.category(), pkg2, emptyVersionList);
 
+    // qtcreator has two versions, the installed is ~testing, the other is 9999
+
     QCOMPARE(
         something.data(something.index(0, PackageReportItem::Column::Installed),
                        Qt::DisplayRole),
         QVariant());
+    QCOMPARE(something.data(something.index(
+                                0, PackageReportItem::Column::InstalledVersion),
+                            Qt::DisplayRole),
+             QVariant("(~)4.12.3"));
+    QCOMPARE(something.data(something.index(
+                                0, PackageReportItem::Column::AvailableVersion),
+                            Qt::DisplayRole),
+             QVariant("~4.12.3"));
     QCOMPARE(something.data(something.index(0, PackageReportItem::Column::Name),
                             Qt::DisplayRole),
              QVariant("qt-creator"));
@@ -139,11 +156,33 @@ void testpackagereportmodel::test_data_fetch_data_role()
                  something.index(0, PackageReportItem::Column::Description),
                  Qt::DisplayRole),
              QVariant::fromValue(QString::fromStdString(pkg1.description())));
+}
+
+void testpackagereportmodel::test_data_fetch_data_role_b()
+{
+    PackageReportModel something;
+
+    const eix_proto::Category &cat = eix.category(cat_dev_qt);
+    const eix_proto::Package &pkg1 = cat.package(pkg_dev_qt_ww_qt_creator);
+    const eix_proto::Package &pkg2 = cat.package(pkg_dev_qt_ww_qtcore);
+
+    something.addPackage(cat.category(), pkg1, emptyVersionList);
+    something.addPackage(cat.category(), pkg2, emptyVersionList);
+
+    // qtcore has one versions, it's installed
 
     QCOMPARE(
         something.data(something.index(1, PackageReportItem::Column::Installed),
                        Qt::DisplayRole),
         QVariant());
+    QCOMPARE(something.data(something.index(
+                                1, PackageReportItem::Column::InstalledVersion),
+                            Qt::DisplayRole),
+             QVariant("5.15.1-r1"));
+    QCOMPARE(something.data(something.index(
+                                1, PackageReportItem::Column::AvailableVersion),
+                            Qt::DisplayRole),
+             QVariant("5.15.1-r1"));
     QCOMPARE(something.data(something.index(1, PackageReportItem::Column::Name),
                             Qt::DisplayRole),
              QVariant("qtcore"));

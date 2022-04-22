@@ -132,9 +132,17 @@ void TestReportModelItem::test_data_member()
                  .toStdString(),
              pkg.name());
 
-    QCOMPARE(something.data(PackageReportItem::Column::Version, Qt::DisplayRole)
-                 .toString(),
-             QString("(~)4.12.3"));
+    QCOMPARE(
+        something
+            .data(PackageReportItem::Column::InstalledVersion, Qt::DisplayRole)
+            .toString(),
+        QString("(~)4.12.3"));
+
+    QCOMPARE(
+        something
+            .data(PackageReportItem::Column::AvailableVersion, Qt::DisplayRole)
+            .toString(),
+        QString("~4.12.3"));
 
     QCOMPARE(something.data(PackageReportItem::Description, Qt::DisplayRole)
                  .toString()

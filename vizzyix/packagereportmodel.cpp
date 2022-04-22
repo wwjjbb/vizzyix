@@ -37,8 +37,12 @@ QVariant PackageReportModel::headerData(int section,
                 return QVariant("Package");
                 break;
 
-            case PackageReportItem::Column::Version:
+            case PackageReportItem::Column::InstalledVersion:
                 return QVariant("Version");
+                break;
+
+            case PackageReportItem::Column::AvailableVersion:
+                return QVariant("Available");
                 break;
 
             case PackageReportItem::Column::Description:

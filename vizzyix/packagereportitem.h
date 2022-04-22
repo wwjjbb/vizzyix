@@ -36,9 +36,16 @@ class PackageReportItem
     eix_proto::MaskFlags_MaskFlag installType() const;
     bool installed() const;
     QStringList versionNames() const;
+    QString highestVersionName() const;
     const eix_proto::Package &packageDetails() const;
 
-    enum Column { Installed, Name, Version, Description };
+    enum Column {
+        Installed,
+        Name,
+        InstalledVersion,
+        AvailableVersion,
+        Description
+    };
 
   private:
     void cacheValues();

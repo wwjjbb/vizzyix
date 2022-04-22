@@ -12,7 +12,8 @@
 #include "eix.pb.h"
 
 const QVector<Qt::ItemDataRole> PackageReportItem::role_(
-    {Qt::DecorationRole, Qt::DisplayRole, Qt::DisplayRole, Qt::DisplayRole});
+    {Qt::DecorationRole, Qt::DisplayRole, Qt::DisplayRole, Qt::DisplayRole,
+     Qt::DisplayRole});
 
 QVariant PackageReportItem::boldFont_;
 
@@ -69,9 +70,7 @@ QVariant PackageReportItem::data(int colNumber, int role) const
     if (colNumber < 0 || colNumber >= columnCount())
         return QVariant();
 
-    if (role == Qt::FontRole &&
-        (installType() == eix_proto::MaskFlags_MaskFlag_WORLD ||
-         installType() == eix_proto::MaskFlags_MaskFlag_WORLD_SETS)) {
+    if (role == Qt::FontRole && installed()) {
         return boldFont();
     }
 
@@ -107,8 +106,11 @@ QVariant PackageReportItem::data(int colNumber, int role) const
         return QVariant::fromValue(
             QString::fromStdString(packageDetails().name()));
 
-    case Column::Version:
+    case Column::InstalledVersion:
         return QVariant::fromValue(versions_.join(", "));
+
+    case Column::AvailableVersion:
+        return QVariant::fromValue(highestVersionName());
 
     case Column::Description:
         return QVariant::fromValue(
@@ -161,8 +163,32 @@ QStringList PackageReportItem::versionNames() const
     return versions_;
 }
 
+QString PackageReportItem::highestVersionName() const
+{
+    QString foundVersion("");
+    auto versionIndex = packageDetails().version_size() - 1;
+    while (versionIndex >= 0) {
+        const auto &ver = packageDetails().version(versionIndex);
+        if (ver.id() != "9999") {
+            foundVersion = QString::fromStdString(ver.id());
+            if (!EixProtoHelper::isStable(ver)) {
+                foundVersion = "~" + foundVersion;
+            }
+            // For checking the tests
+            // foundVersion = QString("%1-(%2/%3)")
+            //                   .arg(foundVersion)
+            //                   .arg(versionIndex)
+            //                   .arg(packageDetails().version_size());
+            break;
+        }
+        versionIndex--;
+    }
+    return foundVersion;
+}
+
 // Some values are needed for redraws but are not straightforward to
-// work out. Determine these upfront and cache them.
+// work out. Determine these upfront (in the constructor) and cache
+// them.
 void PackageReportItem::cacheValues()
 {
     auto resultInstalled = false;
@@ -172,9 +198,9 @@ void PackageReportItem::cacheValues()
         bool versionInstalled = false;
         const eix_proto::Version &ver = packageDetails().version(vn);
 
-        // Installed means the software is installed. If so, "world" means the
-        // software was pulled in from the world file or world set, otherwise
-        // it's a dependency. I think.
+        // Installed means the software is installed. If so, "world" means
+        // the software was pulled in from the world file or world set,
+        // otherwise it's a dependency. I think.
         if (ver.has_installed()) {
             resultInstalled = true;
             versionInstalled = true;

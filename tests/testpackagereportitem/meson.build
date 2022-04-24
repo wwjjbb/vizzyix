@@ -12,7 +12,7 @@ test_files_cti = [
     vizzyix_sdir / 'combinedpackagelist.cpp',
     vizzyix_sdir / 'packagereportitem.cpp']
 
-testdata_filename = meson.source_root() / 'pbtesting' / 'eix.pb'
+testdata_filename = meson.project_source_root() / 'pbtesting' / 'eix.pb'
 
 test_packagereportitem = executable(
     'testpackagereportitem',

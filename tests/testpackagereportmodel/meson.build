@@ -14,7 +14,7 @@ test_files_ctm = [
     vizzyix_sdir / 'packagereportitem.cpp',
     vizzyix_sdir / 'packagereportmodel.cpp']
 
-testdata_filename = meson.source_root() / 'pbtesting' / 'eix.pb'
+testdata_filename = meson.project_source_root() / 'pbtesting' / 'eix.pb'
 
 test_packagereportmodel = executable(
     'testpackagereportmodel',

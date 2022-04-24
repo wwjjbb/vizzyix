@@ -9,6 +9,7 @@
 
 #include "combinedpackageinfo.h"
 #include "eix.pb.h"
+#include "localexceptions.h"
 
 typedef QPair<QString, QString> CategoryPackageName;
 typedef QMap<QString, CombinedPackageInfo> VersionMap;
@@ -18,24 +19,23 @@ class CombinedPackageList
   public:
     CombinedPackageList();
 
-    void readPackageData();
-    void readEixData(const eix_proto::Collection &eix);
+    void readPortagePackageDatabase(const eix_proto::Collection &eix);
     bool isZombie(const std::string &categoryName,
                   const std::string &packageName) const;
     VersionMap zombies(const std::string &categoryName,
                        const std::string &packageName);
     QStringList zombies() const;
-    void identifyZombies();
 
   private:
     // No copy/swap/assign - not required for anything
-    CombinedPackageList(const CombinedPackageList &other);
-    friend void swap(CombinedPackageList &first, CombinedPackageList &second);
-    CombinedPackageList &operator=(CombinedPackageList &other);
+    CombinedPackageList(const CombinedPackageList &);
+    CombinedPackageList &operator=(CombinedPackageList &);
 
   private:
     enum DataOrigin { EixData, PkgData };
 
+    void identifyZombies();
+    void mergeEixData(const eix_proto::Collection &eix);
     void clearPackageDataFlags();
     void purgeOrphanPackages();
     void addVersion(const QString &categoryName, const QString &packageName,
@@ -52,8 +52,6 @@ class CombinedPackageList
     QMap<CategoryPackageName, VersionMap> packages_;
 
     QSet<CategoryPackageName> zombies_;
-
-    bool eixDataPresent = false;
 };
 
 #endif // COMBINEDPACKAGELIST_H

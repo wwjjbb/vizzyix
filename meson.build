@@ -2,14 +2,14 @@
 # SPDX-License-Identifier: CC0-1.0
 
 project('vizzyix', 'cpp',
-        version : '0.1.2',
+        version : '0.1.3',
         license : 'GPL-2.0-only',
         default_options : [
             'prefix=/usr',
             'sysconfdir=/etc',
             'cpp_std=c++17'
         ],
-        meson_version : '>= 0.49',
+        meson_version : '>= 0.60.0',
 )
 
 qt5 = import('qt5')

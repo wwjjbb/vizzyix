@@ -35,6 +35,7 @@ INCLUDEPATH += $$top_srcdir/includes/HtmlBuilder
 
 SOURCES += \
     aboutdialog.cpp \
+    applicationdata.cpp \
     categorytreeitem.cpp \
     categorytreemodel.cpp \
     combinedpackageinfo.cpp \
@@ -49,11 +50,14 @@ SOURCES += \
 
 HEADERS += \
     aboutdialog.h \
+    applicationdata.h \
     categorytreeitem.h \
     categorytreemodel.h \
     combinedpackageinfo.h \
     combinedpackagelist.h \
+    customhtmlelements.h \
     eixprotohelper.h \
+    localexceptions.h \
     mainwindow.h \
     packagereportitem.h \
     packagereportmodel.h \

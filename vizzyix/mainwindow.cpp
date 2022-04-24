@@ -5,22 +5,23 @@
 
 #include <QDateTime>
 #include <QDebug>
+#include <QLabel>
 #include <QMessageBox>
 #include <QProcess>
 #include <QTextBrowser>
-#include <fstream>
+#include <QTimer>
 #include <iostream>
 
+#include "HTML.h"
 #include "aboutdialog.h"
-#include "ui_mainwindow.h"
-
+#include "customhtmlelements.h"
 #include "eix.pb.h"
 #include "eixprotohelper.h"
 #include "searchboxvalidator.h"
-#include <HTML.h>
+#include "ui_mainwindow.h"
 
 /*
- * MainWindow
+ * MainWindowqDebug
  *
  * The MainWindow class provides the user interface for Vizzyix.
  */
@@ -40,7 +41,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->actionAbout_Qt, &QAction::triggered, this,
             &MainWindow::aboutQt);
     connect(ui->actionReload, &QAction::triggered, this,
-            &MainWindow::checkStatusAndReload);
+            &MainWindow::loadPortageData);
     connect(ui->actionQuit, &QAction::triggered, this, &MainWindow::close);
 
     // Toolbar - main filters
@@ -58,9 +59,17 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->actionSelectWorld, &QAction::triggered, this,
             &MainWindow::onSelectWorld);
 
-    // Database reload
+    // Database & models
 
-    connect(this, &MainWindow::reloadPackageData, this, &MainWindow::runEix);
+    connect(this, &MainWindow::loadPortageData, &applicationData,
+            &ApplicationData::loadPortageData);
+
+    connect(&applicationData, &ApplicationData::categoryModelUpdated, this,
+            &MainWindow::setupCategoryTreeModelData);
+
+    // Data
+    connect(&applicationData, &ApplicationData::eixRunning, this,
+            &MainWindow::onEixRunning);
 
     // Toolbar - text search
 
@@ -68,12 +77,13 @@ MainWindow::MainWindow(QWidget *parent)
     searchBox->setClearButtonEnabled(true);
     connect(searchBox, &QLineEdit::returnPressed, this,
             &MainWindow::onSearchText);
-
     fixupLineClearButton(searchBox);
-
     searchBox->setValidator(new SearchBoxValidator(this));
 
+    QLabel *searchLabel = new QLabel(" Search: ");
+
     ui->toolBar->addSeparator();
+    ui->toolBar->addWidget(searchLabel);
     ui->toolBar->addWidget(searchBox);
 
     // Connect up the packageDescription signals
@@ -84,13 +94,16 @@ MainWindow::MainWindow(QWidget *parent)
 
     // Assign all the models, they have all been constructed complete/empty
 
-    ui->categoryTree->setModel(&categoryModel);
-    packageProxyModel.setSourceModel(&packageModel);
+    ui->categoryTree->setModel(&applicationData.categoryTreeModel);
+    packageProxyModel.setSourceModel(&applicationData.packageModel);
     ui->packageListView->setModel(&packageProxyModel);
 
     QFont boldFont(ui->packageListView->font());
     boldFont.setWeight(QFont::Bold);
     PackageReportItem::setBoldFont(boldFont);
+
+    // Arrange for startup event
+    QTimer::singleShot(0, this, SLOT(onReady()));
 }
 
 MainWindow::~MainWindow()
@@ -110,111 +123,6 @@ void MainWindow::aboutVizzyix()
     about.exec();
 }
 
-/*
- * MainWindow::runEix
- *
- * Runs "eix --proto" in a separate process
- *
- * This uses eix to generate the 'proto' data into a temporary file. It does
- * not wait for the command to complete; it signals onEixFinished() if the
- * process runs and completes, or onEixError() if it failed to start.
- *
- * If eix succeeds, the eix data is loaded, the portage installed pkg database
- * is read and merged in, and then the display is updated.
- */
-void MainWindow::runEix()
-{
-    setEixRunning(true);
-
-    // Create the temporary file for the protobuf data. All we want is the
-    // name because its going to be written by the eix process, but to get
-    // that, it's necessary to open the temp file. It will be closed when
-    // eixOutput is destroyed.
-    eixOutput = new QTemporaryFile();
-    eixOutput->open();
-
-    eixProcess = new QProcess;
-    QStringList eix_params = {"--proto"};
-    switch (selectionState()) {
-    default:
-    case SelectionState::All:
-        break;
-    case SelectionState::Installed:
-        eix_params << "-I";
-        break;
-    case SelectionState::World:
-        eix_params << "--world";
-        break;
-    }
-
-    if (!searchBox->text().isEmpty()) {
-        // The searchbox validation only allows dashes, letters, digits. It does
-        // not allow dashes to be doubled.
-        // If the search text starts with "-", need to quote with "--" prefix
-        QString leader(searchBox->text().startsWith("-") ? "--" : "");
-        eix_params << leader + searchBox->text();
-    }
-
-    eixProcess->setStandardOutputFile(eixOutput->fileName());
-
-    // These signals get triggered by either the process completing, or by not
-    // starting. Docs are not really clear on this, but experimentally it seems
-    // if the executable file is not found the error happens but NOT the finish.
-    // So going to assume they are exclusive. There are some other signals in
-    // this class that I've decided to ignore.
-    // TODO: find something that defines how a QProcess ends.
-    connect(eixProcess,
-            QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this,
-            &MainWindow::onEixFinished);
-    connect(eixProcess, &QProcess::errorOccurred, this,
-            &MainWindow::onEixError);
-
-    // TODO: configure this path somewhere
-    // TODO: check the executable exists
-    eixProcess->start("/usr/bin/eix", eix_params);
-}
-
-void MainWindow::cleanupEixProcess()
-{
-    delete eixProcess;
-    eixProcess = nullptr;
-
-    delete eixOutput;
-    eixOutput = nullptr;
-
-    // Once the process is dead, re-enable the option to run it again
-    setEixRunning(false);
-}
-
-void MainWindow::parseEixData()
-{
-    std::fstream input(eixOutput->fileName().toStdString(),
-                       std::ios::in | std::ios::binary);
-    if (!eix.ParseFromIstream(&input)) {
-        // TODO: report this better
-        qDebug() << "Failed to parse EIX output";
-
-        eix.clear_category();
-    }
-
-    packageList.readPackageData();
-
-    // Merge the eix data for installed packages into the package list. The
-    // merge requires the eix data to be unfiltered - which is currently the
-    // case when the application starts. The merge is only done once because
-    // readEixData does nothing if the eix data has already been read.
-    // TODO - deal with eix-update being run
-    if (selectionState() == SelectionState::All) {
-        packageList.readEixData(eix);
-
-        // Zombies may only be identified with an unfiltered eix database
-        // so this is the only place it should be done.
-        packageList.identifyZombies();
-    }
-
-    setupCategoryModelData();
-}
-
 void MainWindow::adjustCategoryTreeColumns()
 {
     const int pkgsWidth = 80;
@@ -226,57 +134,6 @@ void MainWindow::adjustCategoryTreeColumns()
     ui->categoryTree->setColumnWidth(0, residualWidth);
 }
 
-void MainWindow::onEixFinished(int exitCode, QProcess::ExitStatus)
-{
-    if (exitCode == 0) {
-        lastLoadTime = QDateTime::currentDateTime();
-        parseEixData();
-    } else {
-        // Eix is reporting an error of some sort. It returns 1 if there is no
-        // match, but don't know how specific that error code is. Going to treat
-        // all errors as 'no data'.
-        // TODO: what error codes are returned by eix and is there any point
-        // distinguishing them from 'no data',
-        qDebug() << "Calling eix returned error code" << exitCode;
-
-        eix.clear_category();
-        setupCategoryModelData();
-    }
-
-    cleanupEixProcess();
-}
-
-void MainWindow::onEixError(QProcess::ProcessError error)
-{
-    // TODO: report this better
-    // Most likely reason would be the exe path not being valid, maybe
-    // eix is not installed.
-    qDebug() << "Failed to run eix:" << error;
-
-    eix.clear_category();
-    setupCategoryModelData();
-
-    cleanupEixProcess();
-}
-
-void MainWindow::addCategory(CategoryTreeItem *catItem)
-{
-    if (catItem->isContainer()) {
-        // Recurse into child nodes
-        for (int child = 0; child < catItem->childCount(); ++child) {
-            addCategory(catItem->child(child));
-        }
-    } else {
-        const auto &cat = eix.category(catItem->categoryNumber());
-        for (int pkgNumber = 0; pkgNumber < cat.package_size(); ++pkgNumber) {
-            VersionMap zombieList = packageList.zombies(
-                cat.category(), cat.package(pkgNumber).name());
-            packageModel.addPackage(cat.category(), cat.package(pkgNumber),
-                                    zombieList);
-        }
-    }
-}
-
 void MainWindow::adjustPackageTableColumns()
 {
     ui->packageListView->setColumnWidth(PackageReportItem::Column::Installed,
@@ -284,29 +141,13 @@ void MainWindow::adjustPackageTableColumns()
     ui->packageListView->setColumnWidth(PackageReportItem::Column::Name, 170);
 }
 
-void MainWindow::setSelectionState(MainWindow::SelectionState state)
+/*
+ * MainWindow::setupCategoryModelData
+ *
+ * Displays the category tree when the model has been changed.
+ */
+void MainWindow::setupCategoryTreeModelData()
 {
-    if (selectionState_ != state) {
-        selectionState_ = state;
-        runEix();
-    }
-}
-
-void MainWindow::setupCategoryModelData()
-{
-    // Decode the data
-    categoryModel.startUpdate();
-    categoryModel.clear();
-
-    for (int catNumber = 0; catNumber < eix.category_size(); ++catNumber) {
-        const auto &catRef = eix.category(catNumber);
-        QString categoryName = catRef.category().c_str();
-        categoryModel.addCategory(catNumber, categoryName,
-                                  catRef.package_size());
-    }
-
-    categoryModel.endUpdate();
-
     ui->categoryTree->hideColumn(CategoryTreeItem::Column::CatIndex);
     auto allNode = ui->categoryTree->model()->index(0, 0);
     ui->categoryTree->setExpanded(allNode, true);
@@ -324,7 +165,14 @@ void MainWindow::setupCategoryModelData()
     adjustCategoryTreeColumns();
 }
 
-void MainWindow::setEixRunning(bool running)
+/*
+ * MainWindow::setEixRunning
+ *
+ * Disables some form controls when eix is running
+ * - turn off the Form|Reload option
+ * - prevent changes to search text
+ */
+void MainWindow::onEixRunning(bool running)
 {
     ui->actionReload->setEnabled(!running);
     if (searchBox != nullptr) {
@@ -342,7 +190,8 @@ void MainWindow::setEixRunning(bool running)
  * user hits RETURN.
  *
  * The following hack locates the clear button and adds an action that
- * makes pressing the button signal "returnPressed". See relevant Qt bug,
+ * makes pressing the button signal "QLineEdit::returnPressed". See
+ * relevant Qt bug,
  *     https://bugreports.qt.io/browse/QTBUG-36257
  *
  * lineEdit:
@@ -395,18 +244,6 @@ void MainWindow::showEbuildSource(const QUrl &url, const QString &label)
         }
     }
 }
-
-namespace HTML
-{
-class Hr : public Element
-{
-  public:
-    Hr() : Element("hr")
-    {
-        mbVoid = true;
-    }
-};
-} // namespace HTML
 
 void MainWindow::showPackageDetails(const PackageReportItem &item)
 {
@@ -504,7 +341,7 @@ void MainWindow::showPackageDetails(const PackageReportItem &item)
             *html << HTML::Paragraph(
                 QString("USE: %1").arg(useflags).toStdString());
 
-        QString repoDir = repositoryIndex.find(repoName);
+        QString repoDir = applicationData.repositoryIndex.find(repoName);
         if (repoDir.isEmpty()) {
             *html << HTML::Paragraph(
                 QString("EBUILD: can't find directory for %1 in repos.conf")
@@ -515,10 +352,11 @@ void MainWindow::showPackageDetails(const PackageReportItem &item)
             auto ebuildFile =
                 QString("%1-%2.ebuild")
                     .arg(item.name().c_str(), version.id().c_str());
-            auto ebuildPath = QString("%1/%2/%3/%4")
-                                  .arg(repositoryIndex.find(repoName),
-                                       item.category().c_str(),
-                                       item.name().c_str(), ebuildFile);
+            auto ebuildPath =
+                QString("%1/%2/%3/%4")
+                    .arg(applicationData.repositoryIndex.find(repoName),
+                         item.category().c_str(), item.name().c_str(),
+                         ebuildFile);
             *html << HTML::Paragraph("EBUILD: ")
                   << HTML::Link(ebuildFile.toStdString(),
                                 ebuildPath.toStdString());
@@ -533,17 +371,29 @@ void MainWindow::showPackageDetails(const PackageReportItem &item)
 
     *html << HTML::Hr();
 
-    auto zoms = packageList.zombies();
+    auto zoms = applicationData.packageList.zombies();
     if (zoms.length() != 0) {
-        *html << HTML::Paragraph(QString("Zombies: %1")
-                                     .arg(packageList.zombies().join(", "))
-                                     .toStdString());
+        *html << HTML::Paragraph(
+            QString("Zombies: %1")
+                .arg(applicationData.packageList.zombies().join(", "))
+                .toStdString());
     }
     ui->packageDescription->setHtml(QString::fromStdString(html->toString()));
 }
 
-void MainWindow::checkDatabaseAges(bool enableReload)
+/*
+ * MainWindow::checkDatabaseAges
+ *
+ * Checks whether the database files and loaded database are consistent.
+ * It does this by comparing the various data file dates. It may report,
+ * via a dialog, that eix-update needs to be run - can't do this by itself.
+ *
+ * Returns false if the portage data needs to be reloaded from scratch.
+ */
+bool MainWindow::isDataConsistent()
 {
+    bool result = true;
+
     // TODO: all the filenames should be properties
 
     // The date of emerge log file is used to determine the time of the last
@@ -555,9 +405,8 @@ void MainWindow::checkDatabaseAges(bool enableReload)
     QFileInfo portageEixFile("/var/cache/eix/portage.eix");
 
     // The date of the timestamp.chk file is used to determine the last gentoo
-    // repo sync time
-    // TODO: use the repository list to allow the newest repository date to be
-    // determined
+    // repo sync time.
+    // TODO: determine by reading the repository list
     QFileInfo syncTimestampFile("/var/db/repos/gentoo/metadata/timestamp.chk");
 
     if (emergeLogFile.exists() && portageEixFile.exists() &&
@@ -567,6 +416,8 @@ void MainWindow::checkDatabaseAges(bool enableReload)
         QDateTime lastSync = syncTimestampFile.lastModified();
 
         if (lastEmerge > lastEixUpdate || lastSync > lastEixUpdate) {
+            // Since the previous eix-update, there's been a sync or emerge
+
             QMessageBox::warning(this, QString("Eix database is out of date"),
                                  QString("Please run \"eix-update\" in a "
                                          "console to get the latest data\n"
@@ -575,8 +426,9 @@ void MainWindow::checkDatabaseAges(bool enableReload)
                                          "to show the new data.\n"
                                          "\n"
                                          ""));
-        } else if (lastLoadTime < lastEixUpdate && enableReload) {
-            emit reloadPackageData();
+        } else if (applicationData.lastLoadTime < lastEixUpdate) {
+            qDebug() << "Reload the package data";
+            result = false;
         } else {
             qDebug() << "Information: everything appears to be up-to-date";
         }
@@ -594,26 +446,25 @@ void MainWindow::checkDatabaseAges(bool enableReload)
                      << "does not exist";
         }
     }
+
+    return result;
 }
 
-MainWindow::SelectionState MainWindow::selectionState() const
+/*
+ * MainWindow::onReady
+ *
+ * This should happen straight after the creation of the objects, via a
+ * singleshot timer set in the constructor.
+ */
+void MainWindow::onReady()
 {
-    return selectionState_;
-}
+    // It should not take long to read a few small files, and it needs to be
+    // done before the other data is loaded
+    applicationData.repositoryIndex.load();
 
-void MainWindow::showEvent(QShowEvent *event)
-{
-    QMainWindow::showEvent(event);
-    if (firstTimeShown) {
-        firstTimeShown = false;
-        QMetaObject::invokeMethod(this, &MainWindow::onShow,
-                                  Qt::ConnectionType::QueuedConnection);
-    }
-}
+    emit loadPortageData();
 
-void MainWindow::checkStatusAndReload()
-{
-    checkDatabaseAges(true);
+    (void)isDataConsistent();
 }
 
 void MainWindow::onCategorySelected(const QItemSelection &selected,
@@ -630,10 +481,8 @@ void MainWindow::onCategorySelected(const QItemSelection &selected,
         CategoryTreeItem *item =
             static_cast<CategoryTreeItem *>(list[0].internalPointer());
 
-        packageModel.startUpdate();
-        packageModel.clear();
-        addCategory(item);
-        packageModel.endUpdate();
+        applicationData.setupPackageModelData(item);
+
         packageProxyModel.sort(PackageReportItem::Column::Name);
 
         // Don't really want this armed till something is there. The final flag,
@@ -660,8 +509,9 @@ void MainWindow::onPackageSelected(const QItemSelection &selected,
 
         // The QModelIndex is for the sort proxy, so it needs to be translated
         // to an index for the base package model.
-        const PackageReportItem &item = packageModel.packageItem(
-            packageProxyModel.mapToSource(list[0]).row());
+        const PackageReportItem &item =
+            applicationData.packageModel.packageItem(
+                packageProxyModel.mapToSource(list[0]).row());
 
         showPackageDetails(item);
 
@@ -670,44 +520,29 @@ void MainWindow::onPackageSelected(const QItemSelection &selected,
     }
 }
 
-///
-/// \brief MainWindow::onShow
-///
-/// This should happen straignt after the creation of the object, via showEvent.
-void MainWindow::onShow()
-{
-    // It should not take long to read a few small files, and it needs to be
-    // done before the other data is loaded
-    repositoryIndex.load();
-
-    // FIXME - this works as intended, but gets a warning about emitting from
-    // constructor
-    emit reloadPackageData();
-
-    // TODO - This would be better appearing when something has been displayed.
-    // e.g if you eix-update while this dialog is visible, it will still show
-    // the data is loaded above.
-    checkDatabaseAges(false);
-}
-
 void MainWindow::onSelectAll()
 {
-    setSelectionState(SelectionState::All);
+    applicationData.setSelectionFilter(ApplicationData::SelectionFilter::All);
+    applicationData.runEix();
 }
 
 void MainWindow::onSelectInstalled()
 {
-    setSelectionState(SelectionState::Installed);
+    applicationData.setSelectionFilter(
+        ApplicationData::SelectionFilter::Installed);
+    applicationData.runEix();
 }
 
 void MainWindow::onSelectWorld()
 {
-    setSelectionState(SelectionState::World);
+    applicationData.setSelectionFilter(ApplicationData::SelectionFilter::World);
+    applicationData.runEix();
 }
 
 void MainWindow::onSearchText()
 {
-    runEix();
+    applicationData.setSearch(searchBox->text());
+    applicationData.runEix();
 }
 
 void MainWindow::onpackageDescriptionLinkClicked(const QUrl &url)

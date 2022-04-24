@@ -48,8 +48,7 @@ class CategoryTreeItem
 
     QVector<CategoryTreeItem *> childItems_;
     QVector<QVariant> itemData_;
-    // TODO - parentItem should be const but there are consequences so left till
-    // head is working
+    // TODO - parentItem should be const but there are complications with that
     CategoryTreeItem *parentItem_;
 };
 

@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 #include "combinedpackagelist.h"
-
 #include "combinedpackageinfo.h"
 
 #include <QDebug>
@@ -14,18 +13,19 @@
 /*
  * CombinedPackageList::CombinedPackageList
  *
- * Construvtor - initial placeholder
+ * Constructor - initial placeholder
  */
 CombinedPackageList::CombinedPackageList()
 {
 }
 
 /*
- * CombinedPackageList::readPackageData
+ * CombinedPackageList::readPortagePackageDatabase
  *
  * Makes a list of all installed packages by scanning the pkg database
  */
-void CombinedPackageList::readPackageData()
+void CombinedPackageList::readPortagePackageDatabase(
+    const eix_proto::Collection &eix)
 {
     clearPackageDataFlags();
 
@@ -68,19 +68,12 @@ void CombinedPackageList::readPackageData()
         }
     }
 
-    // Not sure if this is needed. How can the package list end up with
-    // items that are not in eixdb and not in packagedb???
-    // - on application start, the package list entries must have one or both.
-    // - if eix-update is called, and packages have been removed, and they
-    //   were not installed at the time. That could create 0/0 entries.
-    // TODO: consider effects of emerge sync
-    // TODO: consider effects of eix-update
-    // TODO: consider effects of installing/removing packages
-    // purgeOrphanPackages();
+    mergeEixData(eix);
+    identifyZombies();
 }
 
 /*
- * CombinedPackageList::readEixData
+ * CombinedPackageList::mergeEixData
  *
  * Makes a list of insalled packages according to the eix database
  *
@@ -92,34 +85,28 @@ void CombinedPackageList::readPackageData()
  *     The eix database
  *
  */
-void CombinedPackageList::readEixData(const eix_proto::Collection &eix)
+void CombinedPackageList::mergeEixData(const eix_proto::Collection &eix)
 {
-    if (!eixDataPresent) {
-        // Only read the eix data once (at startup)
+    for (int catNumber = 0; catNumber < eix.category_size(); ++catNumber) {
+        const auto &cat = eix.category(catNumber);
 
-        for (int catNumber = 0; catNumber < eix.category_size(); ++catNumber) {
-            const auto &cat = eix.category(catNumber);
+        QString categoryName = QString::fromStdString(cat.category());
 
-            QString categoryName = QString::fromStdString(cat.category());
+        for (int pkgNumber = 0; pkgNumber < cat.package_size(); ++pkgNumber) {
+            const auto &pkg = cat.package(pkgNumber);
 
-            for (int pkgNumber = 0; pkgNumber < cat.package_size();
-                 ++pkgNumber) {
-                const auto &pkg = cat.package(pkgNumber);
+            QString packageName = QString::fromStdString(pkg.name());
 
-                QString packageName = QString::fromStdString(pkg.name());
+            for (int verNumber = 0; verNumber < pkg.version_size();
+                 ++verNumber) {
+                const auto &ver = pkg.version(verNumber);
 
-                for (int verNumber = 0; verNumber < pkg.version_size();
-                     ++verNumber) {
-                    const auto &ver = pkg.version(verNumber);
-
-                    if (ver.has_installed()) {
-                        addVersion(categoryName, packageName,
-                                   QString::fromStdString(ver.id()), EixData);
-                    }
+                if (ver.has_installed()) {
+                    addVersion(categoryName, packageName,
+                               QString::fromStdString(ver.id()), EixData);
                 }
             }
         }
-        eixDataPresent = true;
     }
 }
 
@@ -283,20 +270,4 @@ void CombinedPackageList::addVersion(const QString &categoryName,
         versionItem.value().setPkgDb(true);
         break;
     }
-}
-
-CombinedPackageList::CombinedPackageList(const CombinedPackageList &)
-{
-    // not used/public
-}
-
-void swap(CombinedPackageList &, CombinedPackageList &)
-{
-    // not used/public
-}
-
-CombinedPackageList &CombinedPackageList::operator=(CombinedPackageList &)
-{
-    // not used/public
-    return *this;
 }

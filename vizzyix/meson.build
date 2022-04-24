@@ -10,6 +10,7 @@ configure_file(
 
 vizzyix_src = [
     'aboutdialog.cpp',
+    'applicationdata.cpp',
     'categorytreeitem.cpp',
     'categorytreemodel.cpp',
     'combinedpackageinfo.cpp',
@@ -26,6 +27,7 @@ vizzyix_src = [
 moc_files = qt5.preprocess(
     moc_headers: [
         'aboutdialog.h',
+        'applicationdata.h',
         'categorytreemodel.h',
         'mainwindow.h',
         'packagereportmodel.h',

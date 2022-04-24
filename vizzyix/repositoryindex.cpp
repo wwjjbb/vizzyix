@@ -100,7 +100,7 @@ bool RepositoryIndex::load()
                     }
                 } else {
                     // TODO: report this - it's far more likely than the other
-                    // problems above because this all deoends on user edited
+                    // problems above because this all depends on user edited
                     // file content.
                     qDebug()
                         << "Unknown line format: " << confFile << ":" << line;

@@ -11,6 +11,7 @@
 import eix_pb2
 
 EVERYTHING = True
+FINDLIVEONLY = True
 
 collection = eix_pb2.Collection()
 with open("eix.pb", "rb") as f:
@@ -18,9 +19,19 @@ with open("eix.pb", "rb") as f:
 
 if EVERYTHING:
     print(collection)
+elif FINDLIVEONLY:
+    for cat in collection.category:
+        #print(cat.category)
+        for pkg in cat.package:
+            #print("   ",pkg.name)
+            ver = pkg.version[0]
+            if ver.id[0:3] == '999':
+                print(cat.category, pkg.name)
+
 else:
     print("Length:",len(collection.category))
     for cat in collection.category:
         print(cat.category)
         for pkg in cat.package:
             print("   ",pkg.name)
+

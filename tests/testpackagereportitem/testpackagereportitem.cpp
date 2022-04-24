@@ -26,6 +26,8 @@ class TestReportModelItem : public QObject
     void test_name();
     void test_description();
     void test_data_member();
+    void test_data_member_with_999();
+    void test_data_member_only_999();
     void test_copy_constructor();
     // TODO: void test_swap();
     // TODO: void test_assignment();
@@ -45,6 +47,10 @@ class TestReportModelItem : public QObject
 
     int cat_sys_apps;
     int pkg_sys_apps_ww_wjbtools;
+
+    int cat_app_accessibility;
+    int pkg_app_accessibility_ww_emacspeak;
+    int pkg_app_accessibility_ww_simon;
 };
 
 TestReportModelItem::TestReportModelItem()
@@ -67,6 +73,9 @@ void TestReportModelItem::initTestCase()
         cat_sys_apps = findCat("sys-apps");
         QVERIFY(cat_sys_apps >= 0);
 
+        cat_app_accessibility = findCat("app-accessibility");
+        QVERIFY(cat_app_accessibility >= 0);
+
         // world install
         pkg_dev_qt_ww_qt_creator = findPkg(cat_dev_qt, "qt-creator");
         QVERIFY(pkg_dev_qt_ww_qt_creator >= 0);
@@ -82,6 +91,16 @@ void TestReportModelItem::initTestCase()
         // world install (overlay)
         pkg_sys_apps_ww_wjbtools = findPkg(cat_sys_apps, "wjbtools");
         QVERIFY(pkg_sys_apps_ww_wjbtools >= 0);
+
+        // not installed, two versions: 39.0-r2 and ~9999
+        pkg_app_accessibility_ww_emacspeak =
+            findPkg(cat_app_accessibility, "emacspeak");
+        QVERIFY(pkg_app_accessibility_ww_emacspeak >= 0);
+
+        // not installed, one version: ~9999
+        pkg_app_accessibility_ww_simon =
+            findPkg(cat_app_accessibility, "simon");
+        QVERIFY(pkg_app_accessibility_ww_simon >= 0);
     }
 }
 
@@ -143,6 +162,73 @@ void TestReportModelItem::test_data_member()
             .data(PackageReportItem::Column::AvailableVersion, Qt::DisplayRole)
             .toString(),
         QString("~4.12.3"));
+
+    QCOMPARE(something.data(PackageReportItem::Description, Qt::DisplayRole)
+                 .toString()
+                 .toStdString(),
+             pkg.description());
+}
+
+void TestReportModelItem::test_data_member_with_999()
+{
+    const eix_proto::Category &cat = eix.category(cat_app_accessibility);
+    const eix_proto::Package &pkg =
+        cat.package(pkg_app_accessibility_ww_emacspeak);
+    PackageReportItem something(cat.category(), pkg, emptyVersionMap);
+
+    QVariant installed = something.data(PackageReportItem::Column::Installed,
+                                        Qt::DecorationRole);
+    QCOMPARE(installed, QVariant());
+
+    QCOMPARE(something.data(PackageReportItem::Column::Name, Qt::DisplayRole)
+                 .toString()
+                 .toStdString(),
+             pkg.name());
+
+    QCOMPARE(
+        something
+            .data(PackageReportItem::Column::InstalledVersion, Qt::DisplayRole)
+            .toString(),
+        QString(""));
+
+    QCOMPARE(
+        something
+            .data(PackageReportItem::Column::AvailableVersion, Qt::DisplayRole)
+            .toString(),
+        QString("39.0-r2"));
+
+    QCOMPARE(something.data(PackageReportItem::Description, Qt::DisplayRole)
+                 .toString()
+                 .toStdString(),
+             pkg.description());
+}
+
+void TestReportModelItem::test_data_member_only_999()
+{
+    const eix_proto::Category &cat = eix.category(cat_app_accessibility);
+    const eix_proto::Package &pkg = cat.package(pkg_app_accessibility_ww_simon);
+    PackageReportItem something(cat.category(), pkg, emptyVersionMap);
+
+    QVariant installed = something.data(PackageReportItem::Column::Installed,
+                                        Qt::DecorationRole);
+    QCOMPARE(installed, QVariant());
+
+    QCOMPARE(something.data(PackageReportItem::Column::Name, Qt::DisplayRole)
+                 .toString()
+                 .toStdString(),
+             pkg.name());
+
+    QCOMPARE(
+        something
+            .data(PackageReportItem::Column::InstalledVersion, Qt::DisplayRole)
+            .toString(),
+        QString(""));
+
+    QCOMPARE(
+        something
+            .data(PackageReportItem::Column::AvailableVersion, Qt::DisplayRole)
+            .toString(),
+        QString("~9999"));
 
     QCOMPARE(something.data(PackageReportItem::Description, Qt::DisplayRole)
                  .toString()

@@ -6,7 +6,9 @@
 #include "eixprotohelper.h"
 
 #include <QBrush>
+#include <QDebug>
 #include <QIcon>
+#include <string>
 #include <utility>
 
 #include "eix.pb.h"
@@ -167,9 +169,12 @@ QString PackageReportItem::highestVersionName() const
 {
     QString foundVersion("");
     auto versionIndex = packageDetails().version_size() - 1;
+    auto lowestLiveIndex = -1;
     while (versionIndex >= 0) {
         const auto &ver = packageDetails().version(versionIndex);
-        if (ver.id() != "9999") {
+        // Live builds start with 3 or more nines. Not really interested in
+        // these except as a last resort if there is nothing else.
+        if (ver.id().rfind("999", 0) == std::string::npos) {
             foundVersion = QString::fromStdString(ver.id());
             if (!EixProtoHelper::isStable(ver)) {
                 foundVersion = "~" + foundVersion;
@@ -180,9 +185,20 @@ QString PackageReportItem::highestVersionName() const
             //                   .arg(versionIndex)
             //                   .arg(packageDetails().version_size());
             break;
+        } else {
+            lowestLiveIndex = versionIndex;
         }
         versionIndex--;
     }
+
+    if (foundVersion.isEmpty() && lowestLiveIndex >= 0) {
+        const auto &ver = packageDetails().version(lowestLiveIndex);
+        foundVersion = QString::fromStdString(ver.id());
+        if (!EixProtoHelper::isStable(ver)) {
+            foundVersion = "~" + foundVersion;
+        }
+    }
+
     return foundVersion;
 }
 

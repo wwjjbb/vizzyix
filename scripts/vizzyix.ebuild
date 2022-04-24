@@ -16,6 +16,22 @@ IUSE=""
 
 RESTRICT="mirror"
 
+DEPEND="app-portage/eix[protobuf]
+        dev-libs/protobuf
+        dev-qt/qtcore
+        dev-qt/qtgui
+        dev-qt/qtsvg"
+
+RDEPEND="app-portage/eix[protobuf]
+        dev-libs/protobuf
+        dev-qt/qtcore
+        dev-qt/qtgui
+        dev-qt/qtsvg"
+
+BDEPEND="app-portage/eix[protobuf]
+         dev-libs/protobuf
+         virtual/pkgconfig"
+
 src_install() {
 	meson_src_install
 

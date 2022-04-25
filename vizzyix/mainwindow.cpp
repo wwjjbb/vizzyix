@@ -245,6 +245,15 @@ void MainWindow::showEbuildSource(const QUrl &url, const QString &label)
     }
 }
 
+/*
+ * MainWindow::showPackageDetails
+ *
+ * Shows the package information and lists the available versions.
+ *
+ * QString and std:string and C strings. What a mess. If only C++
+ * had come with strings from the start, and if only the C++ book
+ * hadn't used creating a string class as a major example.
+ */
 void MainWindow::showPackageDetails(const PackageReportItem &item)
 {
     if (html != nullptr)
@@ -252,22 +261,22 @@ void MainWindow::showPackageDetails(const PackageReportItem &item)
 
     html = new HTML::Document("Package Report");
 
-    *html << HTML::Header1((item.category() + "/" + item.name()).c_str());
+    *html << HTML::Header1(item.category() + "/" + item.name());
 
-    *html << HTML::Paragraph(item.description().c_str());
+    *html << HTML::Paragraph(item.description());
 
     // There can be more than one homepage listed. If so, the names are
     // separated by a space.
     *html << HTML::Paragraph("Home: ");
     auto homepage =
-        QString(item.packageDetails().homepage().c_str()).split(" ");
+        QString::fromStdString(item.packageDetails().homepage()).split(" ");
     for (int hp = 0; hp < homepage.length(); ++hp) {
         *html << HTML::Link(homepage[hp].toStdString(),
                             homepage[hp].toStdString());
     }
 
-    QString licenses =
-        QString(item.packageDetails().licenses().c_str()).replace(" ", ", ");
+    QString licenses = QString::fromStdString(item.packageDetails().licenses())
+                           .replace(" ", ", ");
     if (!licenses.isEmpty()) {
         *html << HTML::Paragraph("License: " + licenses.toStdString());
     }
@@ -289,20 +298,22 @@ void MainWindow::showPackageDetails(const PackageReportItem &item)
 
         // Bracketted repository (overlay) name. Empty string if repo is
         // "gentoo"
-        QString repoNameDisplay = "";
+        std::string repoNameDisplay{""};
         QString repoName = "";
 
         if (version.has_repository()) {
             repoName = version.repository().repository().c_str();
             if (!repoName.isEmpty()) {
-                repoNameDisplay = QString("(%1)").arg(repoName);
+                repoNameDisplay = QString("(%1)").arg(repoName).toStdString();
             }
         }
 
-        *html << HTML::Header2(
-            (QString::fromStdString((stable ? "" : "(~)") + version.id()) +
-             repoNameDisplay)
-                .toStdString());
+        // TODO - check /etc/portage/package.* or eix flags??
+        std::string stableMarker{""};
+        if (!stable) {
+            stableMarker = version.has_installed() ? "(~)" : "~";
+        }
+        *html << HTML::Header2(stableMarker + version.id() + repoNameDisplay);
 
         // Say if version is installed or not
         if (version.has_installed()) {
@@ -310,7 +321,7 @@ void MainWindow::showPackageDetails(const PackageReportItem &item)
             QDateTime date(QDateTime::fromTime_t(dateInstalled));
 
             auto installType = EixProtoHelper::classifyInstallType(version);
-            QString installIcon;
+            std::string installIcon;
 
             switch (installType) {
             case eix_proto::MaskFlags_MaskFlag_WORLD:
@@ -328,8 +339,7 @@ void MainWindow::showPackageDetails(const PackageReportItem &item)
                 break;
             }
 
-            *html << HTML::Image(installIcon.toStdString(),
-                                 installIcon.toStdString(), 24, 24);
+            *html << HTML::Image(installIcon, installIcon, 24, 24);
             *html << HTML::Paragraph(
                 ("Installed: " + date.toString(Qt::ISODate) + " ")
                     .toStdString());
@@ -382,7 +392,7 @@ void MainWindow::showPackageDetails(const PackageReportItem &item)
 }
 
 /*
- * MainWindow::checkDatabaseAges
+ * MainWindow::isDataConsistent
  *
  * Checks whether the database files and loaded database are consistent.
  * It does this by comparing the various data file dates. It may report,
@@ -427,10 +437,9 @@ bool MainWindow::isDataConsistent()
                                          "\n"
                                          ""));
         } else if (applicationData.lastLoadTime < lastEixUpdate) {
-            qDebug() << "Reload the package data";
+            // Eix data has been updated since the last time the app loaded it.
+            // Need to do a reload.
             result = false;
-        } else {
-            qDebug() << "Information: everything appears to be up-to-date";
         }
     } else {
         if (!emergeLogFile.exists()) {

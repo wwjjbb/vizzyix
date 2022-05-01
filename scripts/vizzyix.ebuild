@@ -16,20 +16,22 @@ IUSE=""
 
 RESTRICT="mirror"
 
-DEPEND="app-portage/eix[protobuf]
-        dev-libs/protobuf
+DEPEND="app-portage/eix:=[protobuf]
+        dev-libs/protobuf:=
         dev-qt/qtcore
         dev-qt/qtgui
-        dev-qt/qtsvg"
+        dev-qt/qtsvg
+        dev-qt/qtwidgets"
 
-RDEPEND="app-portage/eix[protobuf]
-        dev-libs/protobuf
+RDEPEND="app-portage/eix:=[protobuf]
+        dev-libs/protobuf:=
         dev-qt/qtcore
         dev-qt/qtgui
-        dev-qt/qtsvg"
+        dev-qt/qtsvg
+        dev-qt/qtwidgets"
 
-BDEPEND="app-portage/eix[protobuf]
-         dev-libs/protobuf
+BDEPEND="app-portage/eix:=[protobuf]
+         dev-libs/protobuf:=
          virtual/pkgconfig"
 
 src_install() {

@@ -56,27 +56,9 @@ QtCreator, or in meson by running this in the meson build directory:
 
   $ meson test
 
-DEPLOY
+PORTAGE
 
-The application source archive is generated along with an ebuild file:
-
-  * Firstly:
-
-    * Set the version number in line 6 of the top-level meson.build file. Try
-      not to change any of the formatting on the line because the qmake build
-      also needs the version number and extracts it from here using a bash
-      script (scripts/mkconfig).
-
-    * Commit any outstanding changes (because meson generates the package with
-      the last committed files, not those in working directory).
-
-  * Locate the top-level "scripts" directory and cd into it.
-
-  * Run ./mkpackage
-
-  * The distribution archive is generated and tested using the "meson dist"
-    command - this unpacks the archive into a clean directory and runs the
-    unit tests.
-
-  * If this looks good, the archive file and the matching ebuild file are
-    placed into "script/files" directory ready for installation.
+The eix and vizzyix ebuilds are in the scripts/ directory. These are intended
+to go in your overlay - rename to dd the required version numbers: the eix
+version should be the same as the current gentoo version number, and the
+vizzyix version should be one of the versions in github.

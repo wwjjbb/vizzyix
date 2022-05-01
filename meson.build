@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: CC0-1.0
 
 project('vizzyix', 'cpp',
-        version : '0.1.4',
+        version : '0.1.5',
         license : 'GPL-2.0-only',
         default_options : [
             'prefix=/usr',
@@ -13,7 +13,7 @@ project('vizzyix', 'cpp',
 )
 
 qt5 = import('qt5')
-qt5_dep = dependency('qt5', modules: ['Core', 'Gui', 'Svg'])
+qt5_dep = dependency('qt5', modules: ['Core', 'Gui', 'Svg', 'Widgets', ])
 
 html_incs = include_directories('includes/HtmlBuilder')
 

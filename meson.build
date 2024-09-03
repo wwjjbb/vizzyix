@@ -50,7 +50,6 @@ custom_target('zz_toplevel_files',
     input: [
         '.clang-format',
         '.clang-format.license',
-        '.hgignore',
         'AUTHORS',
         'AUTHORS.license',
         'ChangeLog',

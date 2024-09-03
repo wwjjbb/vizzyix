@@ -1,8 +1,7 @@
 // SPDX-FileCopyrightText: 2020 Bill Binder <dxtwjb@gmail.com>
 // SPDX-License-Identifier: GPL-2.0-only
 
-#ifndef COMBINEDPACKAGEINFO_H
-#define COMBINEDPACKAGEINFO_H
+#pragma once
 
 #include <QDir>
 #include <QString>
@@ -32,5 +31,3 @@ class CombinedPackageInfo
     bool inEixDb_;
     bool inPkgDb_;
 };
-
-#endif // COMBINEDPACKAGEINFO_H

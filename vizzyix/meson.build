@@ -24,20 +24,37 @@ vizzyix_src = [
     'searchboxvalidator.cpp'
     ]
 
-moc_files = qt5.preprocess(
-    moc_headers: [
-        'aboutdialog.h',
-        'applicationdata.h',
-        'categorytreemodel.h',
-        'mainwindow.h',
-        'packagereportmodel.h',
-        'searchboxvalidator.h'
-        ],
-    ui_files: [
-         'aboutdialog.ui',
-         'mainwindow.ui'],
+vizzyix_hdr = [
+    'categorytreeitem.h',
+    'combinedpackageinfo.h',
+    'combinedpackagelist.h',
+    'customhtmlelements.h',
+    'eixprotohelper.h',
+    'localexceptions.h',
+    'packagereportitem.h',
+    'repositoryindex.h',
+    'searchboxvalidator.h'
+    ]
+
+vizzyix_moc_hdr = [
+    'aboutdialog.h',
+    'applicationdata.h',
+    'categorytreemodel.h',
+    'mainwindow.h',
+    'packagereportmodel.h',
+    'searchboxvalidator.h'
+    ]
+
+vizzyix_ui = [
+    'aboutdialog.ui',
+    'mainwindow.ui',
+    ]
+
+moc_files = qt.preprocess(
+    moc_headers: vizzyix_moc_hdr,
+    ui_files: vizzyix_ui,
     qresources: 'resources.qrc',
-    dependencies: qt5_dep
+    dependencies: qt_dep
     )
 
 vizzyix_sdir = meson.current_source_dir()
@@ -46,6 +63,11 @@ vixxyix_incs = include_directories('.')
 executable('vizzyix',
     vizzyix_src,
     moc_files,
-    dependencies: [qt5_dep, protobuf_dep, eixpb_dep],
+    dependencies: [qt_dep, protobuf_dep, eixpb_dep],
     include_directories: [ html_incs ],
+    extra_files: [ vizzyix_hdr,
+                   vizzyix_moc_hdr,
+                   vizzyix_ui,
+                   'version.h.in',
+                   ],
     install: true)

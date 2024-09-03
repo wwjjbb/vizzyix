@@ -1,11 +1,14 @@
 // SPDX-FileCopyrightText: 2020 Bill Binder <dxtwjb@gmail.com>
 // SPDX-License-Identifier: GPL-2.0-only
 
-#ifndef COMBINEDPACKAGELIST_H
-#define COMBINEDPACKAGELIST_H
+#pragma once
 
+#include <QDir>
 #include <QMap>
+#include <QPair>
 #include <QSet>
+#include <QString>
+#include <QStringList>
 
 #include "combinedpackageinfo.h"
 #include "eix.pb.h"
@@ -14,12 +17,18 @@
 typedef QPair<QString, QString> CategoryPackageName;
 typedef QMap<QString, CombinedPackageInfo> VersionMap;
 
+enum MergeMode { MergeOnly, MergeAdd };
+
 class CombinedPackageList
 {
   public:
-    CombinedPackageList();
+    CombinedPackageList(const QString &pkgDir = "var/db/pkg");
 
-    void readPortagePackageDatabase(const eix_proto::Collection &eix);
+    void clear();
+    void readPortagePackageDatabase(bool filtered);
+    void readEixData(const eix_proto::Collection &eix);
+    void identifyZombies();
+
     bool isZombie(const std::string &categoryName,
                   const std::string &packageName) const;
     VersionMap zombies(const std::string &categoryName,
@@ -34,15 +43,15 @@ class CombinedPackageList
   private:
     enum DataOrigin { EixData, PkgData };
 
-    void identifyZombies();
-    void mergeEixData(const eix_proto::Collection &eix);
     void clearPackageDataFlags();
     void purgeOrphanPackages();
     void addVersion(const QString &categoryName, const QString &packageName,
                     const QString &versionName, DataOrigin origin,
-                    const QString &packagePath = QString());
+                    MergeMode mode, const QString &packagePath = QString());
 
   private:
+    const QDir pkgDirectory_;
+
     /*!
      * \brief packages_
      * The first string is the category, e.g. "dev-qt".
@@ -53,5 +62,3 @@ class CombinedPackageList
 
     QSet<CategoryPackageName> zombies_;
 };
-
-#endif // COMBINEDPACKAGELIST_H

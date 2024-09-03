@@ -10,9 +10,7 @@
 #include <QProcess>
 #include <QTextBrowser>
 #include <QTimer>
-#include <iostream>
 
-#include "HTML.h"
 #include "aboutdialog.h"
 #include "customhtmlelements.h"
 #include "eix.pb.h"
@@ -318,7 +316,7 @@ void MainWindow::showPackageDetails(const PackageReportItem &item)
         // Say if version is installed or not
         if (version.has_installed()) {
             std::time_t dateInstalled = version.installed().date();
-            QDateTime date(QDateTime::fromTime_t(dateInstalled));
+            QDateTime date(QDateTime::fromSecsSinceEpoch(dateInstalled));
 
             auto installType = EixProtoHelper::classifyInstallType(version);
             std::string installIcon;

@@ -1,8 +1,7 @@
 // SPDX-FileCopyrightText: 2020 Bill Binder <dxtwjb@gmail.com>
 // SPDX-License-Identifier: GPL-2.0-only
 
-#ifndef MAINWINDOW_H
-#define MAINWINDOW_H
+#pragma once
 
 #include <QActionGroup>
 #include <QDateTime>
@@ -75,4 +74,3 @@ class MainWindow : public QMainWindow
 
     void aboutQt();
 };
-#endif // MAINWINDOW_H

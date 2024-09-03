@@ -1,5 +1,4 @@
 # SPDX-FileCopyrightText: None
 # SPDX-License-Identifier: CC0-1.0
 
-top_srcdir=$$PWD
-top_builddir=$$shadowed($$PWD)
+subdir('HtmlBuilder')

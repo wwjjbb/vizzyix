@@ -1,8 +1,7 @@
 // SPDX-FileCopyrightText: 2020 Bill Binder <dxtwjb@gmail.com>
 // SPDX-License-Identifier: GPL-2.0-only
 
-#ifndef CATEGORYTREEMODEL_H
-#define CATEGORYTREEMODEL_H
+#pragma once
 
 #include <QAbstractItemModel>
 
@@ -37,5 +36,3 @@ class CategoryTreeModel : public QAbstractItemModel
     CategoryTreeItem *rootItem_;
     CategoryTreeItem *allItem_;
 };
-
-#endif // CATEGORYTREEMODEL_H

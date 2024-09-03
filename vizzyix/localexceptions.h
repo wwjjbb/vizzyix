@@ -1,5 +1,7 @@
-#ifndef LOCALEXCEPTIONS_H
-#define LOCALEXCEPTIONS_H
+// SPDX-FileCopyrightText: 2020 Bill Binder <dxtwjb@gmail.com>
+// SPDX-License-Identifier: GPL-2.0-only
+
+#pragma once
 
 #include <stdexcept>
 
@@ -10,5 +12,3 @@ class NotDefinedException : public std::logic_error
     {
     }
 };
-
-#endif // LOCALEXCEPTIONS_H

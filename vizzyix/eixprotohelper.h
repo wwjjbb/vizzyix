@@ -1,8 +1,7 @@
 // SPDX-FileCopyrightText: 2020 Bill Binder <dxtwjb@gmail.com>
 // SPDX-License-Identifier: GPL-2.0-only
 
-#ifndef EIXPROTOHELPER_H
-#define EIXPROTOHELPER_H
+#pragma once
 
 #include "eix.pb.h"
 
@@ -23,5 +22,3 @@ class EixProtoHelper
     static bool isStable(const eix_proto::Version &version);
     static QString useFlagSummary(const eix_proto::Version &version);
 };
-
-#endif // EIXPROTOHELPER_H

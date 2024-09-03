@@ -1,8 +1,7 @@
 // SPDX-FileCopyrightText: 2020 Bill Binder <dxtwjb@gmail.com>
 // SPDX-License-Identifier: GPL-2.0-only
 
-#ifndef CATEGORYTREEITEM_H
-#define CATEGORYTREEITEM_H
+#pragma once
 
 #include <QVariant>
 #include <QVector>
@@ -51,5 +50,3 @@ class CategoryTreeItem
     // TODO - parentItem should be const but there are complications with that
     CategoryTreeItem *parentItem_;
 };
-
-#endif // CATEGORYTREEITEM_H

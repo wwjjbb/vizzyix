@@ -1,14 +1,12 @@
 // SPDX-FileCopyrightText: 2020 Bill Binder <dxtwjb@gmail.com>
 // SPDX-License-Identifier: GPL-2.0-only
 
-#ifndef PACKAGEREPORTITEM_H
-#define PACKAGEREPORTITEM_H
+#pragma once
 
 #include <QFont>
 #include <QStringList>
 #include <QVariant>
 
-#include "combinedpackageinfo.h"
 #include "combinedpackagelist.h"
 #include "eix.pb.h"
 
@@ -61,5 +59,3 @@ class PackageReportItem
     QStringList versions_;
     VersionMap zombieVersions_;
 };
-
-#endif // PACKAGEREPORTITEM_H

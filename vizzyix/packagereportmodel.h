@@ -1,8 +1,7 @@
 // SPDX-FileCopyrightText: 2020 Bill Binder <dxtwjb@gmail.com>
 // SPDX-License-Identifier: GPL-2.0-only
 
-#ifndef PACKAGEREPORTMODEL_H
-#define PACKAGEREPORTMODEL_H
+#pragma once
 
 #include <QAbstractTableModel>
 #include <QModelIndex>
@@ -10,7 +9,6 @@
 #include <QVariant>
 #include <QVector>
 
-#include "combinedpackageinfo.h"
 #include "combinedpackagelist.h"
 #include "eix.pb.h"
 #include "packagereportitem.h"
@@ -36,5 +34,3 @@ class PackageReportModel : public QAbstractTableModel
   private:
     QVector<PackageReportItem> packages;
 };
-
-#endif // PACKAGEREPORTMODEL_H

@@ -7,6 +7,7 @@
 #include <QDebug>
 #include <QDir>
 #include <QMap>
+#include <QRegularExpression>
 
 #include "eix.pb.h"
 
@@ -15,24 +16,31 @@
  *
  * Constructor - initial placeholder
  */
-CombinedPackageList::CombinedPackageList()
+CombinedPackageList::CombinedPackageList(const QString &pkgDir)
+    : pkgDirectory_(pkgDir)
 {
+}
+
+void CombinedPackageList::clear()
+{
+    packages_.clear();
+    zombies_.clear();
 }
 
 /*
  * CombinedPackageList::readPortagePackageDatabase
  *
- * Makes a list of all installed packages by scanning the pkg database
+ * Makes a list of all installed packages by scanning the pkg database.
+ *
+ * If filtered search, then only add versions to existing packages.
  */
-void CombinedPackageList::readPortagePackageDatabase(
-    const eix_proto::Collection &eix)
+void CombinedPackageList::readPortagePackageDatabase(bool filtered)
 {
     clearPackageDataFlags();
 
     // TODO: find pkg db from a system variable, or config setting
-    QDir pkgDir("/var/db/pkg");
     foreach (const auto categoryInfo,
-             pkgDir.entryInfoList(QDir::NoDotAndDotDot | QDir::Dirs)) {
+             pkgDirectory_.entryInfoList(QDir::NoDotAndDotDot | QDir::Dirs)) {
 
         // e.g. /var/db/pkg/dev-qt
 
@@ -43,39 +51,44 @@ void CombinedPackageList::readPortagePackageDatabase(
         foreach (const auto packageInfo,
                  categoryDir.entryInfoList(QDir::NoDotAndDotDot | QDir::Dirs)) {
 
-            // Now need to extract just the 'base filename' of this
-            // directory from the path and then split this into psckage name
-            // and version. The name has one or more hyphens, splitting it
-            // into fields. The version is from the first field starting
-            // with a digit. So it should be easy, right?
+            // Now extract just the 'base filename' of this directory from the
+            // path and then split this into psckage name and version. The name
+            // has one or more hyphens, dividing it into fields. The version is
+            // from the first field starting with a digit. So it should be easy,
+            // right?
+            // e.g. "qt-creator-12.4.3" -> ("qt-creator", "12.4.3")
 
-            // e.g. qt-creator-12.4.3
             QString filename = packageInfo.fileName();
 
-            int posver = filename.indexOf(QRegExp("\\-\\d"));
+            int posver = filename.indexOf(QRegularExpression("\\-\\d"));
             if (posver < 0) {
-                // TODO: never seen, is there any need to report it?
-                qDebug() << filename << "**** No version found";
+                // TODO: so far not seen; report any problem name/version  so it
+                // can be fixed
+                qDebug() << filename << " **** No version found";
             } else {
-                QStringRef packageName(&filename, 0, posver);
-                QStringRef packageVersion(&filename, posver + 1,
+                QString packageName = filename.sliced(0, posver);
+                QString packageVersion = filename.sliced(posver + 1,
                                           filename.length() - (posver + 1));
 
-                addVersion(categoryName, packageName.toString(),
-                           packageVersion.toString(), PkgData,
+                // This assumes the database is already populated with eix data.
+                // If the eix search was filtered, only want to add versions to
+                // existing entries. If the eix search was not filtered, always
+                // want to add versions.
+
+                addVersion(categoryName, packageName,
+                           packageVersion, DataOrigin::PkgData,
+                           filtered ? MergeMode::MergeOnly
+                                    : MergeMode::MergeAdd,
                            packageInfo.absoluteFilePath());
             }
         }
     }
-
-    mergeEixData(eix);
-    identifyZombies();
 }
 
 /*
  * CombinedPackageList::mergeEixData
  *
- * Makes a list of insalled packages according to the eix database
+ * Makes a list of installed packages according to the eix database
  *
  * Reads the eix database, looks for installed packages and adds them to the
  * list. It is expected this will only be done once, when this app starts up and
@@ -85,7 +98,7 @@ void CombinedPackageList::readPortagePackageDatabase(
  *     The eix database
  *
  */
-void CombinedPackageList::mergeEixData(const eix_proto::Collection &eix)
+void CombinedPackageList::readEixData(const eix_proto::Collection &eix)
 {
     for (int catNumber = 0; catNumber < eix.category_size(); ++catNumber) {
         const auto &cat = eix.category(catNumber);
@@ -103,7 +116,8 @@ void CombinedPackageList::mergeEixData(const eix_proto::Collection &eix)
 
                 if (ver.has_installed()) {
                     addVersion(categoryName, packageName,
-                               QString::fromStdString(ver.id()), EixData);
+                               QString::fromStdString(ver.id()),
+                               DataOrigin::EixData, MergeMode::MergeAdd);
                 }
             }
         }
@@ -245,12 +259,16 @@ void CombinedPackageList::addVersion(const QString &categoryName,
                                      const QString &packageName,
                                      const QString &versionName,
                                      CombinedPackageList::DataOrigin origin,
-                                     const QString &packagePath)
+                                     MergeMode mode, const QString &packagePath)
 {
     auto key = QPair<QString, QString>(categoryName, packageName);
 
     auto catpkg = packages_.find(key);
     if (catpkg == packages_.end()) {
+        if (mode == MergeMode::MergeOnly) {
+            // Do not add new entries when only merging is allowed
+            return;
+        }
         catpkg = packages_.insert(key, QMap<QString, CombinedPackageInfo>());
     }
     auto &versionList = catpkg.value();
@@ -263,10 +281,10 @@ void CombinedPackageList::addVersion(const QString &categoryName,
         versionItem.value().setVersionDir(QDir(packagePath));
     }
     switch (origin) {
-    case EixData:
+    case DataOrigin::EixData:
         versionItem.value().setEixDb(true);
         break;
-    case PkgData:
+    case DataOrigin::PkgData:
         versionItem.value().setPkgDb(true);
         break;
     }

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2020 Bill Binder <dxtwjb@gmail.com>
+// SPDX-License-Identifier: GPL-2.0-only
+
 #include "applicationdata.h"
 
 #include <QDebug>
@@ -10,14 +13,10 @@ ApplicationData::ApplicationData()
 {
 }
 
-void ApplicationData::setFilters(bool on)
-{
-    filters_ = on;
-}
-
+// Whether any filters are currently set
 bool ApplicationData::filters()
 {
-    return filters_;
+    return selectionFilter() || !search().isEmpty();
 }
 
 /*
@@ -128,15 +127,6 @@ void ApplicationData::runEix()
 
 void ApplicationData::parseEixData()
 {
-    // ======================================================================
-    // FIXME - There is a problem if eix-update is run after vizzyix has been
-    // started, and then File|Reload is used. Thats with the bit below where
-    // it says mergeEixData won't do anything if the eix data has already been
-    // read!
-    // This has gotten complicated because you've tangled up the state (data)
-    // and the GUI.
-    // ======================================================================
-
     std::fstream input(eixOutput->fileName().toStdString(),
                        std::ios::in | std::ios::binary);
     if (!eix.ParseFromIstream(&input)) {
@@ -145,31 +135,16 @@ void ApplicationData::parseEixData()
         eix.clear_category();
     }
 
-    bool reapplyFilters = false;
+    // Merge the data for installed packages and eix info together.
 
-    // Merge the eix data for installed packages into the package list. The
-    // merge requires the eix data to be unfiltered
-    if (!filters()) {
+    // This is purely to get the portage package data loaded (i.e. what's
+    // installed) and combined with what eix knows about available packages.
+    packageList.clear();
+    packageList.readEixData(eix);
+    packageList.readPortagePackageDatabase(filters());
+    packageList.identifyZombies();
 
-        // This is purely to get the portage package data loaded (i.e. what's
-        // installed) and combined with what eix knows about available packages.
-        packageList.readPortagePackageDatabase(eix);
-
-        setFilters(true);
-
-        // Figure out if there are filters that need to be reapplied
-        if (selectionFilter() != SelectionFilter::All || !search().isEmpty())
-            reapplyFilters = true;
-    }
-
-    if (reapplyFilters) {
-        // Need to run eix to apply the filters, can't do that wil the last
-        // process is still running (we're in the onFinished handler).
-        // Use a zero single-shot timer to defer the call till the handler's
-        // over with.
-        QTimer::singleShot(0, this, SLOT(runEix()));
-    } else
-        setupCategoryTreeModelData();
+    setupCategoryTreeModelData();
 }
 
 /*
@@ -234,8 +209,6 @@ void ApplicationData::setupPackageModelData(CategoryTreeItem *catItem)
 
 void ApplicationData::loadPortageData()
 {
-    // Filters need to be off when loading the package dataase
-    setFilters(false);
     runEix();
 }
 

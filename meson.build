@@ -2,18 +2,18 @@
 # SPDX-License-Identifier: CC0-1.0
 
 project('vizzyix', 'cpp',
-        version : '0.1.5',
+        version : '0.2.0',
         license : 'GPL-2.0-only',
         default_options : [
             'prefix=/usr',
             'sysconfdir=/etc',
             'cpp_std=c++17'
         ],
-        meson_version : '>= 0.60.0',
+        meson_version : '>= 1.4.1',
 )
 
-qt5 = import('qt5')
-qt5_dep = dependency('qt5', modules: ['Core', 'Gui', 'Svg', 'Widgets', ])
+qt = import('qt6')
+qt_dep = dependency('qt6', modules: ['Core', 'Gui', 'Svg', 'Widgets', 'SvgWidgets', ])
 
 html_incs = include_directories('includes/HtmlBuilder')
 
@@ -38,6 +38,26 @@ protobuf_dep = dependency('protobuf')
 # ------------------------------------------
 
 subdir('eixpb')
-
+subdir('pbtesting')
+subdir('includes')
 subdir('vizzyix')
 subdir('tests')
+subdir('scripts')
+
+
+# A way to include files into IDE project
+custom_target('zz_toplevel_files',
+    input: [
+        '.clang-format',
+        '.clang-format.license',
+        '.hgignore',
+        'AUTHORS',
+        'AUTHORS.license',
+        'ChangeLog',
+        'ChangeLog.license',
+        'notes.txt',
+        'README',
+    ],
+    output: 'nuffink',
+    command: 'ls',
+)

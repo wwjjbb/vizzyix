@@ -1,5 +1,7 @@
-#ifndef APPLICATIONDATA_H
-#define APPLICATIONDATA_H
+// SPDX-FileCopyrightText: 2020 Bill Binder <dxtwjb@gmail.com>
+// SPDX-License-Identifier: GPL-2.0-only
+
+#pragma once
 
 #include <QDateTime>
 #include <QObject>
@@ -54,7 +56,6 @@ class ApplicationData : public QObject
     void addCategory(CategoryTreeItem *catItem);
 
   private:
-    bool filters_{true};
     QString search_{""};
     SelectionFilter selectionFilter_{All};
     QProcess *eixProcess = nullptr;
@@ -64,5 +65,3 @@ class ApplicationData : public QObject
     void onEixFinished(int exitCode, QProcess::ExitStatus);
     void onEixError(QProcess::ProcessError error);
 };
-
-#endif // APPLICATIONDATA_H

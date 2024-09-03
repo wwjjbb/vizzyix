@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2020 Bill Binder <dxtwjb@gmail.com>
 // SPDX-License-Identifier: GPL-2.0-only
 
+#include <QRegularExpression>
 #include "searchboxvalidator.h"
 
 SearchBoxValidator::SearchBoxValidator(QObject *parent) : QValidator(parent)
@@ -21,7 +22,7 @@ QValidator::State SearchBoxValidator::validate(QString &input, int &) const
     if (input.isEmpty())
         return QValidator::Acceptable;
 
-    if (!input.contains("--") && QRegExp("\\^*[\\w\\-]+\\$*").exactMatch(input))
+    if (!input.contains("--") && QRegularExpression("^\\^*[\\w\\-]+\\$*$").match(input).hasMatch())
         return QValidator::Acceptable;
 
     return QValidator::Invalid;

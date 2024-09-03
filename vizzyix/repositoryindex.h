@@ -1,8 +1,7 @@
 // SPDX-FileCopyrightText: 2020 Bill Binder <dxtwjb@gmail.com>
 // SPDX-License-Identifier: GPL-2.0-only
 
-#ifndef REPOSITORYINDEX_H
-#define REPOSITORYINDEX_H
+#pragma once
 
 #include <QMap>
 #include <QString>
@@ -24,5 +23,3 @@ class RepositoryIndex
     QMap<QString, QString> repoMap_;
     QString mainRepo_;
 };
-
-#endif // REPOSITORYINDEX_H

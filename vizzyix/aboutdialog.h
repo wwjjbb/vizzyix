@@ -1,8 +1,7 @@
 // SPDX-FileCopyrightText: 2020 Bill Binder <dxtwjb@gmail.com>
 // SPDX-License-Identifier: GPL-2.0-only
 
-#ifndef ABOUTDIALOG_H
-#define ABOUTDIALOG_H
+#pragma once
 
 #include <QDialog>
 
@@ -25,5 +24,3 @@ class AboutDialog : public QDialog
   private:
     Ui::AboutDialog *ui;
 };
-
-#endif // ABOUTDIALOG_H

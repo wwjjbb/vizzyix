@@ -1,10 +1,12 @@
-#ifndef CUSTOMHTMLELEMENTS_H
-#define CUSTOMHTMLELEMENTS_H
+// SPDX-FileCopyrightText: 2020 Bill Binder <dxtwjb@gmail.com>
+// SPDX-License-Identifier: GPL-2.0-only
+
+#pragma once
 
 #include "HTML.h"
 
 /*
- * Add a custom html elements to HTML Builder
+ * Add a custom html element to HTML Builder
  */
 
 namespace HTML
@@ -23,4 +25,3 @@ class Hr : public Element
 };
 } // namespace HTML
 
-#endif // CUSTOMHTMLELEMENTS_H

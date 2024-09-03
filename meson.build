@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: CC0-1.0
 
 project('vizzyix', 'cpp',
-        version : '0.2.0',
+        version : '0.2.1',
         license : 'GPL-2.0-only',
         default_options : [
             'prefix=/usr',
@@ -54,7 +54,6 @@ custom_target('zz_toplevel_files',
         'AUTHORS.license',
         'ChangeLog',
         'ChangeLog.license',
-        'notes.txt',
         'README',
     ],
     output: 'nuffink',

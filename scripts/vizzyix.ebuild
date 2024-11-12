@@ -1,4 +1,4 @@
-# Copyright 1999-2022 Gentoo Authors
+# Copyright 1999-2024 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -17,22 +17,26 @@ IUSE=""
 RESTRICT="mirror"
 
 DEPEND="app-portage/eix:=[protobuf]
-        dev-libs/protobuf:=
-        dev-qt/qtcore
-        dev-qt/qtgui
-        dev-qt/qtsvg
-        dev-qt/qtwidgets"
+		dev-cpp/abseil-cpp
+		dev-libs/log4cxx
+		dev-libs/protobuf:=
+		dev-qt/qtcore
+		dev-qt/qtgui
+		dev-qt/qtsvg
+		dev-qt/qtwidgets"
 
 RDEPEND="app-portage/eix:=[protobuf]
-        dev-libs/protobuf:=
-        dev-qt/qtcore
-        dev-qt/qtgui
-        dev-qt/qtsvg
-        dev-qt/qtwidgets"
+		 dev-cpp/abseil-cpp
+		 dev-libs/log4cxx
+		 dev-libs/protobuf:=
+		 dev-qt/qtcore
+		 dev-qt/qtgui
+		 dev-qt/qtsvg
+		 dev-qt/qtwidgets"
 
 BDEPEND="app-portage/eix:=[protobuf]
-         dev-libs/protobuf:=
-         virtual/pkgconfig"
+		 dev-libs/protobuf:=
+		 virtual/pkgconfig"
 
 src_install() {
 	meson_src_install

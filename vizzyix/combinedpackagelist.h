@@ -12,7 +12,6 @@
 
 #include "combinedpackageinfo.h"
 #include "eix.pb.h"
-#include "localexceptions.h"
 
 typedef QPair<QString, QString> CategoryPackageName;
 typedef QMap<QString, CombinedPackageInfo> VersionMap;
@@ -22,43 +21,48 @@ enum MergeMode { MergeOnly, MergeAdd };
 class CombinedPackageList
 {
   public:
-    CombinedPackageList(const QString &pkgDir = "var/db/pkg");
+    CombinedPackageList(const QString &pkgDir);
 
-    void clear();
-    void readPortagePackageDatabase(bool filtered);
-    void readEixData(const eix_proto::Collection &eix);
-    void identifyZombies();
+    CombinedPackageList(const CombinedPackageList &) = delete;
+    CombinedPackageList &operator=(CombinedPackageList &) = delete;
+
+    void load(const eix_proto::Collection &eix, bool filters);
 
     bool isZombie(const std::string &categoryName,
                   const std::string &packageName) const;
-    VersionMap zombies(const std::string &categoryName,
-                       const std::string &packageName);
-    QStringList zombies() const;
+    VersionMap zombieVersions(const std::string &categoryName,
+                              const std::string &packageName);
+    QStringList zombieList() const;
 
   private:
-    // No copy/swap/assign - not required for anything
-    CombinedPackageList(const CombinedPackageList &);
-    CombinedPackageList &operator=(CombinedPackageList &);
-
-  private:
+    /// Type to identify where this entry comes from
     enum DataOrigin { EixData, PkgData };
 
-    void clearPackageDataFlags();
-    void purgeOrphanPackages();
-    void addVersion(const QString &categoryName, const QString &packageName,
-                    const QString &versionName, DataOrigin origin,
-                    MergeMode mode, const QString &packagePath = QString());
+    void clear();
+    void readEixData(const eix_proto::Collection &eix);
+    void readPortagePackageDatabase(bool filtered);
+    void identifyZombies();
+
+    void addVersion(const QString &categoryName,
+                    const QString &packageName,
+                    const QString &versionName,
+                    DataOrigin origin,
+                    MergeMode mode,
+                    const QString &packagePath = QString());
 
   private:
-    const QDir pkgDirectory_;
+    /// The root directory of the package database, i.e. /var/db/pkg
+    const QDir oPkgDirectory;
 
     /*!
-     * \brief packages_
-     * The first string is the category, e.g. "dev-qt".
-     * The second string is the package name, e.g. "qt-creator".
+     * The key is the category + package name, e.g. "dev-qt" + "qt-creator".
      * The value is a map of installed versions of the package
      */
-    QMap<CategoryPackageName, VersionMap> packages_;
+    QMap<CategoryPackageName, VersionMap> oPackages;
 
-    QSet<CategoryPackageName> zombies_;
+    /*!
+     * Category and package name of each zombie.
+     * TODO - surely zombie's have version numbers!
+     */
+    QSet<CategoryPackageName> oZombies;
 };

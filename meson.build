@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: CC0-1.0
 
 project('vizzyix', 'cpp',
-        version : '0.2.1',
+        version : '0.5.0',
         license : 'GPL-2.0-only',
         default_options : [
             'prefix=/usr',
@@ -14,8 +14,6 @@ project('vizzyix', 'cpp',
 
 qt = import('qt6')
 qt_dep = dependency('qt6', modules: ['Core', 'Gui', 'Svg', 'Widgets', 'SvgWidgets', ])
-
-html_incs = include_directories('includes/HtmlBuilder')
 
 # ==========================================
 # Protocol Buffers Compiler
@@ -39,7 +37,6 @@ protobuf_dep = dependency('protobuf')
 
 subdir('eixpb')
 subdir('pbtesting')
-subdir('includes')
 subdir('vizzyix')
 subdir('tests')
 subdir('scripts')

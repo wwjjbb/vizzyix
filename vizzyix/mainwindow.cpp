@@ -8,22 +8,23 @@
 #include <QLabel>
 #include <QMessageBox>
 #include <QProcess>
+#include <QStandardItemModel>
 #include <QTextBrowser>
 #include <QTimer>
+#include <QtLogging>
 
 #include "aboutdialog.h"
-#include "customhtmlelements.h"
 #include "eix.pb.h"
 #include "eixprotohelper.h"
 #include "searchboxvalidator.h"
 #include "ui_mainwindow.h"
 
-/*
- * MainWindowqDebug
- *
- * The MainWindow class provides the user interface for Vizzyix.
+/*!
+ * Attaches to the Designer gui data, wires up the signals/slots, and
+ * sets (empty) data models for the tree and table views.
+ * Also adjusts widget properties where it is not possible to use
+ * Designer to get the required result.
  */
-
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), ui(new Ui::MainWindow)
 {
@@ -34,104 +35,132 @@ MainWindow::MainWindow(QWidget *parent)
 
     // Menu
 
-    connect(ui->actionAbout, &QAction::triggered, this,
+    connect(ui->actionAbout,
+            &QAction::triggered,
+            this,
             &MainWindow::aboutVizzyix);
-    connect(ui->actionAbout_Qt, &QAction::triggered, this,
+    connect(ui->actionAbout_Qt,
+            &QAction::triggered,
+            this,
             &MainWindow::aboutQt);
-    connect(ui->actionReload, &QAction::triggered, this,
+    connect(ui->actionReload,
+            &QAction::triggered,
+            this,
             &MainWindow::loadPortageData);
     connect(ui->actionQuit, &QAction::triggered, this, &MainWindow::close);
 
     // Toolbar - main filters
 
-    selectionStateGroup = new QActionGroup(this);
+    // QActionGroup added at runtime to group the SelectXXX actions so
+    // that only one at a time can be selected. Unfortunately, it's not
+    // possible to set this up in Designer (in 2024, anyway).
+    // No need to explicitly delete since it is owned by this window.
+    auto selectionStateGroup = new QActionGroup(this);
     selectionStateGroup->addAction(ui->actionSelectAll);
     selectionStateGroup->addAction(ui->actionSelectInstalled);
     selectionStateGroup->addAction(ui->actionSelectWorld);
     selectionStateGroup->setExclusive(true);
 
-    connect(ui->actionSelectAll, &QAction::triggered, this,
+    connect(ui->actionSelectAll,
+            &QAction::triggered,
+            this,
             &MainWindow::onSelectAll);
-    connect(ui->actionSelectInstalled, &QAction::triggered, this,
+    connect(ui->actionSelectInstalled,
+            &QAction::triggered,
+            this,
             &MainWindow::onSelectInstalled);
-    connect(ui->actionSelectWorld, &QAction::triggered, this,
+    connect(ui->actionSelectWorld,
+            &QAction::triggered,
+            this,
             &MainWindow::onSelectWorld);
 
     // Database & models
 
-    connect(this, &MainWindow::loadPortageData, &applicationData,
+    connect(this,
+            &MainWindow::loadPortageData,
+            ApplicationData::data(),
             &ApplicationData::loadPortageData);
 
-    connect(&applicationData, &ApplicationData::categoryModelUpdated, this,
-            &MainWindow::setupCategoryTreeModelData);
+    connect(ApplicationData::data(),
+            &ApplicationData::categoryModelUpdated,
+            this,
+            &MainWindow::displayCategoryTree);
 
     // Data
-    connect(&applicationData, &ApplicationData::eixRunning, this,
+    connect(ApplicationData::data(),
+            &ApplicationData::eixRunning,
+            this,
             &MainWindow::onEixRunning);
 
     // Toolbar - text search
 
-    searchBox = new QLineEdit(this);
-    searchBox->setClearButtonEnabled(true);
-    connect(searchBox, &QLineEdit::returnPressed, this,
+    oSearchBox = new QLineEdit(this);
+    oSearchBox->setClearButtonEnabled(true);
+    connect(oSearchBox,
+            &QLineEdit::returnPressed,
+            this,
             &MainWindow::onSearchText);
-    fixupLineClearButton(searchBox);
-    searchBox->setValidator(new SearchBoxValidator(this));
+    fixupLineClearButton(oSearchBox);
+    oSearchBox->setValidator(new SearchBoxValidator(this));
 
     QLabel *searchLabel = new QLabel(" Search: ");
 
     ui->toolBar->addSeparator();
     ui->toolBar->addWidget(searchLabel);
-    ui->toolBar->addWidget(searchBox);
-
-    // Connect up the packageDescription signals
-
-    connect(ui->packageDescription,
-            QOverload<const QUrl &>::of(&QTextBrowser::anchorClicked), this,
-            &MainWindow::onpackageDescriptionLinkClicked);
+    ui->toolBar->addWidget(oSearchBox);
 
     // Assign all the models, they have all been constructed complete/empty
 
-    ui->categoryTree->setModel(&applicationData.categoryTreeModel);
-    packageProxyModel.setSourceModel(&applicationData.packageModel);
-    ui->packageListView->setModel(&packageProxyModel);
+    ui->categoryTree->setModel(&ApplicationData::data()->categoryTreeModel);
+    oPackageProxyModel.setSourceModel(&ApplicationData::data()->packageModel);
+    ui->packageListView->setModel(&oPackageProxyModel);
 
     QFont boldFont(ui->packageListView->font());
     boldFont.setWeight(QFont::Bold);
     PackageReportItem::setBoldFont(boldFont);
 
-    // Arrange for startup event
-    QTimer::singleShot(0, this, SLOT(onReady()));
+    oDetailsDialog = new DetailsDialog(this);
+    connect(this,
+            &MainWindow::showEbuild,
+            oDetailsDialog,
+            &DetailsDialog::showEbuild);
+    connect(ui->ebuildList,
+            &QTableView::clicked,
+            this,
+            &MainWindow::onClickedVersion);
+
+    // Arrange for startup event outside of the constructor
+    QTimer::singleShot(0, this, &MainWindow::onReady);
 }
 
+/// Only has to free up the ui object
 MainWindow::~MainWindow()
 {
     delete ui;
 }
 
-void MainWindow::log(QString message)
-{
-    ui->packageDescription->append(message);
-}
-
-void MainWindow::aboutVizzyix()
-{
-    AboutDialog about(this);
-
-    about.exec();
-}
-
+/*!
+ * Set the width of Categories column in tree view so it's as wide as possible
+ * while leaving space for a 5-digit package count in the Pkgs column.
+ */
 void MainWindow::adjustCategoryTreeColumns()
 {
-    const int pkgsWidth = 80;
+    // It's probably better to check for N digits experimentally rather
+    // than guess pixels, I suppose. I do wish for a way to say, "I want
+    // to fit this text string into a column please, how wide??".
+    // Using a number because I want the columns to stay same width
+    // regardless.
+    auto fontMetrics = ui->packageListView->fontMetrics();
+    auto size = fontMetrics.size(Qt::TextSingleLine, "1234567890");
 
-    // Set the width of the first column so that the second column has just
-    // enough space to show its header, and 4 digit numbers. Base on the current
-    // size of the control.
-    int residualWidth = ui->categoryTree->width() - pkgsWidth;
-    ui->categoryTree->setColumnWidth(0, residualWidth);
+    int categoryWidth = ui->categoryTree->width() - size.width();
+    ui->categoryTree->setColumnWidth(0, categoryWidth);
 }
 
+/*!
+ * Adjust the icon colummn and package name column sizes of the category tree
+ * view to fit content. It's a bit arbitrary, but whatever.
+ */
 void MainWindow::adjustPackageTableColumns()
 {
     ui->packageListView->setColumnWidth(PackageReportItem::Column::Installed,
@@ -139,14 +168,14 @@ void MainWindow::adjustPackageTableColumns()
     ui->packageListView->setColumnWidth(PackageReportItem::Column::Name, 170);
 }
 
-/*
- * MainWindow::setupCategoryModelData
- *
+/*!
  * Displays the category tree when the model has been changed.
  */
-void MainWindow::setupCategoryTreeModelData()
+void MainWindow::displayCategoryTree()
 {
     ui->categoryTree->hideColumn(CategoryTreeItem::Column::CatIndex);
+
+    // Expand all the nodes
     auto allNode = ui->categoryTree->model()->index(0, 0);
     ui->categoryTree->setExpanded(allNode, true);
 
@@ -156,34 +185,32 @@ void MainWindow::setupCategoryTreeModelData()
     connect(ui->categoryTree->selectionModel(),
             QOverload<const QItemSelection &, const QItemSelection &>::of(
                 &QItemSelectionModel::selectionChanged),
-            this, &MainWindow::onCategorySelected, Qt::UniqueConnection);
+            this,
+            &MainWindow::onCategorySelected,
+            Qt::UniqueConnection);
 
     ui->categoryTree->setCurrentIndex(allNode);
 
     adjustCategoryTreeColumns();
 }
 
-/*
- * MainWindow::setEixRunning
- *
- * Disables some form controls when eix is running
+/*!
+ * Disables some form controls while eix is running
  * - turn off the Form|Reload option
  * - prevent changes to search text
  */
 void MainWindow::onEixRunning(bool running)
 {
     ui->actionReload->setEnabled(!running);
-    if (searchBox != nullptr) {
-        searchBox->setEnabled(!running);
+    if (oSearchBox != nullptr) {
+        oSearchBox->setEnabled(!running);
     }
 }
 
-/*
- * MainWindow::fixupLineClearButton
+/*!
+ * Add event to a QLineEdit widget to react to 'clear' being pressed
  *
- * Add event to the LineEdit to react to 'clear' being pressed
- *
- * There is no event for when the line edit's clear button is pressed, so
+ * There is no event for when a QLineEdit's clear button is pressed, so
  * by default the application does not know this has happened until the
  * user hits RETURN.
  *
@@ -201,82 +228,45 @@ void MainWindow::fixupLineClearButton(QLineEdit *lineEdit)
         QAction *myClearAction(
             qobject_cast<QAction *>(lineEdit->children().at(i)));
         if (myClearAction) {
-            connect(myClearAction, &QAction::triggered, lineEdit,
-                    &QLineEdit::returnPressed, Qt::QueuedConnection);
+            connect(myClearAction,
+                    &QAction::triggered,
+                    lineEdit,
+                    &QLineEdit::returnPressed,
+                    Qt::QueuedConnection);
         }
     }
 }
 
-/*
- * MainWindow::showEbuildSource
- *
- * Shows the source of the specified ebuild, using a monospaced font. The
- * listing is prefixed with a header area:
- *   - the title is the specified label value, which should the ebuild filename
- *   - a clickable back button to return to the list of package versions.
- *
- * url:
- *     The url for the ebuild
- * label:
- *     THe title for the listing
- */
-void MainWindow::showEbuildSource(const QUrl &url, const QString &label)
-{
-    QFile ebuildFile(url.path());
-    if (ebuildFile.open(QFile::ReadOnly | QFile::Text)) {
-        QTextStream text(&ebuildFile);
-        QString ebuildText = text.readAll();
-        ebuildFile.close();
-
-        if (ebuildContent.open()) {
-            QTextStream htmlStream(&ebuildContent);
-            htmlStream << "<h1>" << label << "</h1>";
-            htmlStream << "<a href=BACK>Back</a>";
-            htmlStream << "<hr>";
-            htmlStream << "<pre>";
-            htmlStream << ebuildText;
-            htmlStream << "</pre>";
-
-            ebuildContent.close();
-            ui->packageDescription->setSource(ebuildContent.fileName());
-        }
-    }
-}
-
-/*
- * MainWindow::showPackageDetails
- *
+/*!
  * Shows the package information and lists the available versions.
- *
- * QString and std:string and C strings. What a mess. If only C++
- * had come with strings from the start, and if only the C++ book
- * hadn't used creating a string class as a major example.
  */
 void MainWindow::showPackageDetails(const PackageReportItem &item)
 {
-    if (html != nullptr)
-        delete html;
+    // TODO - Show slot numbers
 
-    html = new HTML::Document("Package Report");
+    oHtmlDescription.clear();
 
-    *html << HTML::Header1(item.category() + "/" + item.name());
-
-    *html << HTML::Paragraph(item.description());
+    oHtmlDescription.header(
+        1,
+        QString("%1/%2").arg(item.category().c_str()).arg(item.name().c_str()));
+    oHtmlDescription.para(item.description().c_str());
 
     // There can be more than one homepage listed. If so, the names are
     // separated by a space.
-    *html << HTML::Paragraph("Home: ");
     auto homepage =
         QString::fromStdString(item.packageDetails().homepage()).split(" ");
     for (int hp = 0; hp < homepage.length(); ++hp) {
-        *html << HTML::Link(homepage[hp].toStdString(),
-                            homepage[hp].toStdString());
+        // TODO - simplify the displayed URL
+        // "Sourceforge", "github", <just the domain>
+        oHtmlDescription.link(homepage[hp], homepage[hp]);
     }
 
     QString licenses = QString::fromStdString(item.packageDetails().licenses())
                            .replace(" ", ", ");
     if (!licenses.isEmpty()) {
-        *html << HTML::Paragraph("License: " + licenses.toStdString());
+        // TODO - link the license to the file in portage d/b
+        // Open where though?
+        oHtmlDescription.para("License: " + licenses);
     }
 
     // TODO: simplify the per-version report
@@ -285,33 +275,50 @@ void MainWindow::showPackageDetails(const PackageReportItem &item)
     //   * show the slot number (if there is one)
     //   * identify masked versions with [m]
 
+    oDetailsModel.clear();
+    oDetailsModel.setRowCount(item.packageDetails().version_size());
+    oDetailsModel.setColumnCount(EbuildColumn::ColumnCount);
+
+    oDetailsModel.setHorizontalHeaderLabels(
+        {"Version", "Repository", "Date", "Reason"});
     // Now show details for each version
     for (int vn = 0; vn < item.packageDetails().version_size(); ++vn) {
         const auto &version = item.packageDetails().version(vn);
 
-        *html << HTML::Hr();
-
         // Check whether this version is stable (on the local arch)
         bool stable = EixProtoHelper::isStable(version);
 
-        // Bracketted repository (overlay) name. Empty string if repo is
-        // "gentoo"
-        std::string repoNameDisplay{""};
-        QString repoName = "";
-
+        // Empty string if repo is "gentoo"
+        QString repoName{""}; // "<reponame>"
         if (version.has_repository()) {
             repoName = version.repository().repository().c_str();
-            if (!repoName.isEmpty()) {
-                repoNameDisplay = QString("(%1)").arg(repoName).toStdString();
-            }
         }
 
-        // TODO - check /etc/portage/package.* or eix flags??
-        std::string stableMarker{""};
+        // TODO -also have a colour to highlight lines
+        // Empty string if stable, "(~)" for installed testing, "~" for testing
+        QString stableMarker{""};
         if (!stable) {
             stableMarker = version.has_installed() ? "(~)" : "~";
         }
-        *html << HTML::Header2(stableMarker + version.id() + repoNameDisplay);
+
+        oDetailsModel.setItem(vn,
+                              EbuildColumn::Category,
+                              new QStandardItem(item.category().c_str()));
+        oDetailsModel.setItem(vn,
+                              EbuildColumn::Package,
+                              new QStandardItem(item.name().c_str()));
+        oDetailsModel.setItem(vn,
+                              EbuildColumn::Version,
+                              new QStandardItem(version.id().c_str()));
+
+        QString versionDetail = stableMarker + version.id().c_str();
+
+        oDetailsModel.setItem(vn,
+                              EbuildColumn::VersionDetail,
+                              new QStandardItem(versionDetail));
+        oDetailsModel.setItem(vn,
+                              EbuildColumn::Repository,
+                              new QStandardItem(repoName));
 
         // Say if version is installed or not
         if (version.has_installed()) {
@@ -319,79 +326,59 @@ void MainWindow::showPackageDetails(const PackageReportItem &item)
             QDateTime date(QDateTime::fromSecsSinceEpoch(dateInstalled));
 
             auto installType = EixProtoHelper::classifyInstallType(version);
-            std::string installIcon;
-
+            QString installIcon;
+            QString reason;
             switch (installType) {
             case eix_proto::MaskFlags_MaskFlag_WORLD:
                 installIcon = "qrc:/pkgtable/images/installed-world-marker.png";
+                reason = "World";
                 break;
             case eix_proto::MaskFlags_MaskFlag_WORLD_SETS:
-                installIcon = "qrc:/pkgtable/images/installed-set-marker.png";
+                installIcon =
+                    "qrc:/pkgtable/images/installed-world-set-marker.png";
+                reason = "Set";
                 break;
             case eix_proto::MaskFlags_MaskFlag_MASK_SYSTEM:
                 installIcon =
                     "qrc:/pkgtable/images/installed-system-marker.png";
+                reason = "System";
                 break;
             default:
                 installIcon = "qrc:/pkgtable/images/installed-marker.png";
+                reason = "Dependency";
                 break;
             }
 
-            *html << HTML::Image(installIcon, installIcon, 24, 24);
-            *html << HTML::Paragraph(
-                ("Installed: " + date.toString(Qt::ISODate) + " ")
-                    .toStdString());
-            // TODO: improve layout
+            oDetailsModel.setItem(
+                vn,
+                EbuildColumn::Date,
+                new QStandardItem(date.toString("yyyy-MM-dd")));
+            oDetailsModel.setItem(vn,
+                                  EbuildColumn::Reason,
+                                  new QStandardItem(reason));
         }
-
-        QString useflags = EixProtoHelper::useFlagSummary(version);
-        if (!useflags.isEmpty())
-            *html << HTML::Paragraph(
-                QString("USE: %1").arg(useflags).toStdString());
-
-        QString repoDir = applicationData.repositoryIndex.find(repoName);
-        if (repoDir.isEmpty()) {
-            *html << HTML::Paragraph(
-                QString("EBUILD: can't find directory for %1 in repos.conf")
-                    .arg(repoName)
-                    .toStdString());
-        } else {
-            // (I wish QString would get on better with std::string)
-            auto ebuildFile =
-                QString("%1-%2.ebuild")
-                    .arg(item.name().c_str(), version.id().c_str());
-            auto ebuildPath =
-                QString("%1/%2/%3/%4")
-                    .arg(applicationData.repositoryIndex.find(repoName),
-                         item.category().c_str(), item.name().c_str(),
-                         ebuildFile);
-            *html << HTML::Paragraph("EBUILD: ")
-                  << HTML::Link(ebuildFile.toStdString(),
-                                ebuildPath.toStdString());
-        }
-
-        // Eix does not provide much more.
-        //   * the use available and installed-with flags, maybe.
-        //   * the restrictions
-        //   * the properties
-        //   * installation date, EAPI, and use flags enabled/disabled
     }
 
-    *html << HTML::Hr();
+    oHtmlDescription.hr();
 
-    auto zoms = applicationData.packageList.zombies();
+    auto zoms = ApplicationData::data()->packageList.zombieList();
     if (zoms.length() != 0) {
-        *html << HTML::Paragraph(
+        oHtmlDescription.para(
             QString("Zombies: %1")
-                .arg(applicationData.packageList.zombies().join(", "))
-                .toStdString());
+                .arg(ApplicationData::data()->packageList.zombieList().join(
+                    ", ")));
     }
-    ui->packageDescription->setHtml(QString::fromStdString(html->toString()));
+
+    oHtmlDescription.endHtml();
+
+    ui->packageDescription->setHtml(oHtmlDescription.toString());
+    ui->ebuildList->setModel(&oDetailsModel);
+    ui->ebuildList->setColumnHidden(EbuildColumn::Category, true);
+    ui->ebuildList->setColumnHidden(EbuildColumn::Package, true);
+    ui->ebuildList->setColumnHidden(EbuildColumn::Version, true);
 }
 
-/*
- * MainWindow::isDataConsistent
- *
+/*!
  * Checks whether the database files and loaded database are consistent.
  * It does this by comparing the various data file dates. It may report,
  * via a dialog, that eix-update needs to be run - can't do this by itself.
@@ -402,31 +389,50 @@ bool MainWindow::isDataConsistent()
 {
     bool result = true;
 
-    // TODO: all the filenames should be properties
+    // Date of emerge log file is used to determine time of last install.
+    QFileInfo emergeLogFile(ApplicationData::emergeLogFile);
 
-    // The date of emerge log file is used to determine the time of the last
-    // install.
-    QFileInfo emergeLogFile("/var/log/emerge.log");
-
-    // The date of the portage.eix file is used to determine the last time
+    // Date of portage.eix file is used to determine the last time
     // eix-update was run
-    QFileInfo portageEixFile("/var/cache/eix/portage.eix");
+    QFileInfo portageEixFile(ApplicationData::portageEixFile);
 
     // The date of the timestamp.chk file is used to determine the last gentoo
     // repo sync time.
-    // TODO: determine by reading the repository list
-    QFileInfo syncTimestampFile("/var/db/repos/gentoo/metadata/timestamp.chk");
+    QString timestampFile =
+        QString("%1/metadata/timestamp.chk")
+            .arg(ApplicationData::data()->repositoryIndex.find(
+                "")); // i.e. gentoo
+    QFileInfo syncTimestampFile(timestampFile);
 
-    if (emergeLogFile.exists() && portageEixFile.exists() &&
-        syncTimestampFile.exists()) {
+    if (!emergeLogFile.exists()) {
+        qCritical() << emergeLogFile.absoluteFilePath() << "does not exist";
+        result = false;
+    }
+    if (!portageEixFile.exists()) {
+        qCritical() << portageEixFile.absoluteFilePath() << "does not exist";
+        result = false;
+    }
+    if (!syncTimestampFile.exists()) {
+        qWarning() << syncTimestampFile.absoluteFilePath() << "does not exist";
+
+        QMessageBox::warning(this,
+                             QString("Eix database does not exist"),
+                             QString("Please run \"eix-update\" in a "
+                                     "console \n"
+                                     "and then select menu option \"File | "
+                                     "Reload EIX Database\"\n"
+                                     "to show the data.\n"
+                                     "\n"
+                                     ""));
+        result = false;
+    } else {
         QDateTime lastEmerge = emergeLogFile.lastModified();
         QDateTime lastEixUpdate = portageEixFile.lastModified();
         QDateTime lastSync = syncTimestampFile.lastModified();
 
         if (lastEmerge > lastEixUpdate || lastSync > lastEixUpdate) {
-            // Since the previous eix-update, there's been a sync or emerge
-
-            QMessageBox::warning(this, QString("Eix database is out of date"),
+            QMessageBox::warning(this,
+                                 QString("Eix database is out of date"),
                                  QString("Please run \"eix-update\" in a "
                                          "console to get the latest data\n"
                                          "and then select menu option \"File | "
@@ -434,53 +440,56 @@ bool MainWindow::isDataConsistent()
                                          "to show the new data.\n"
                                          "\n"
                                          ""));
-        } else if (applicationData.lastLoadTime < lastEixUpdate) {
-            // Eix data has been updated since the last time the app loaded it.
-            // Need to do a reload.
             result = false;
-        }
-    } else {
-        if (!emergeLogFile.exists()) {
-            qDebug() << "Warning: " << emergeLogFile.absoluteFilePath()
-                     << "does not exist";
-        }
-        if (!portageEixFile.exists()) {
-            qDebug() << "Warning: " << portageEixFile.absoluteFilePath()
-                     << "does not exist";
-        }
-        if (!syncTimestampFile.exists()) {
-            qDebug() << "Warning: " << syncTimestampFile.absoluteFilePath()
-                     << "does not exist";
+        } else if (ApplicationData::data()->lastLoadTime > lastEixUpdate) {
+            QMessageBox::warning(this,
+                                 QString("Eix database has changed"),
+                                 QString("Please "
+                                         "select menu option \"File | "
+                                         "Reload EIX Database\"\n"
+                                         "to show the new data.\n"
+                                         "\n"
+                                         ""));
+            result = false;
         }
     }
 
     return result;
 }
 
-/*
- * MainWindow::onReady
- *
- * This should happen straight after the creation of the objects, via a
- * singleshot timer set in the constructor.
+/// Show the About... dialog
+void MainWindow::aboutVizzyix()
+{
+    AboutDialog about(this);
+
+    about.exec();
+}
+
+/*!
+ * This happens straight after the creation of the window, via a singleshot
+ * timer set in the constructor. Some things can't be done in a constructor.
  */
 void MainWindow::onReady()
 {
     // It should not take long to read a few small files, and it needs to be
     // done before the other data is loaded
-    applicationData.repositoryIndex.load();
+    ApplicationData::data()->repositoryIndex.load();
 
     emit loadPortageData();
 
     (void)isDataConsistent();
 }
 
+/*!
+ * When a category has been selected in the category tree.
+ */
 void MainWindow::onCategorySelected(const QItemSelection &selected,
                                     const QItemSelection &)
 {
     const QModelIndexList &list = selected.indexes();
     if (list.length() == 1) {
 
-        packageProxyModel.setSortCaseSensitivity(Qt::CaseInsensitive);
+        oPackageProxyModel.setSortCaseSensitivity(Qt::CaseInsensitive);
 
         // This is from the demo implementation of a tree model. Just as well
         // really, because it would have taken a long time to figure it out from
@@ -488,9 +497,9 @@ void MainWindow::onCategorySelected(const QItemSelection &selected,
         CategoryTreeItem *item =
             static_cast<CategoryTreeItem *>(list[0].internalPointer());
 
-        applicationData.setupPackageModelData(item);
+        ApplicationData::data()->setupPackageModelData(item);
 
-        packageProxyModel.sort(PackageReportItem::Column::Name);
+        oPackageProxyModel.sort(PackageReportItem::Column::Name);
 
         // Don't really want this armed till something is there. The final flag,
         // UniqueConnection, means there will only be one connection no matter
@@ -498,16 +507,22 @@ void MainWindow::onCategorySelected(const QItemSelection &selected,
         connect(ui->packageListView->selectionModel(),
                 QOverload<const QItemSelection &, const QItemSelection &>::of(
                     &QItemSelectionModel::selectionChanged),
-                this, &MainWindow::onPackageSelected, Qt::UniqueConnection);
+                this,
+                &MainWindow::onPackageSelected,
+                Qt::UniqueConnection);
 
-        ui->packageListView->setCurrentIndex(packageProxyModel.index(0, 0));
+        ui->packageListView->setCurrentIndex(oPackageProxyModel.index(0, 0));
         adjustPackageTableColumns();
 
     } else {
-        qDebug() << list.length() << "items selected - should not happen";
+        qCritical() << "onCategorySelected :" << list.length()
+                    << "items selected - should not happen";
     }
 }
 
+/*!
+ * When a package has been selected, show the package details
+ */
 void MainWindow::onPackageSelected(const QItemSelection &selected,
                                    const QItemSelection &)
 {
@@ -517,54 +532,73 @@ void MainWindow::onPackageSelected(const QItemSelection &selected,
         // The QModelIndex is for the sort proxy, so it needs to be translated
         // to an index for the base package model.
         const PackageReportItem &item =
-            applicationData.packageModel.packageItem(
-                packageProxyModel.mapToSource(list[0]).row());
+            ApplicationData::data()->packageModel.packageItem(
+                oPackageProxyModel.mapToSource(list[0]).row());
 
         showPackageDetails(item);
 
     } else {
-        qDebug() << list.length() << "items selected - should not happen";
+        qCritical() << "onPackageSelected :" << list.length()
+                    << "items selected - should not happen";
     }
 }
 
+/// Select all packages to be displayed
 void MainWindow::onSelectAll()
 {
-    applicationData.setSelectionFilter(ApplicationData::SelectionFilter::All);
-    applicationData.runEix();
+    ApplicationData::data()->setSelectionFilter(
+        ApplicationData::SelectionFilter::All);
+    emit loadPortageData();
 }
 
+/// Select all installed packages to be displayed
 void MainWindow::onSelectInstalled()
 {
-    applicationData.setSelectionFilter(
+    ApplicationData::data()->setSelectionFilter(
         ApplicationData::SelectionFilter::Installed);
-    applicationData.runEix();
+    emit loadPortageData();
 }
 
+/// Select all world packages to be displayed
 void MainWindow::onSelectWorld()
 {
-    applicationData.setSelectionFilter(ApplicationData::SelectionFilter::World);
-    applicationData.runEix();
+    ApplicationData::data()->setSelectionFilter(
+        ApplicationData::SelectionFilter::World);
+    emit loadPortageData();
 }
 
+/// Apply a search filter for package names
 void MainWindow::onSearchText()
 {
-    applicationData.setSearch(searchBox->text());
-    applicationData.runEix();
+    ApplicationData::data()->setSearch(oSearchBox->text());
+    emit loadPortageData();
 }
 
-void MainWindow::onpackageDescriptionLinkClicked(const QUrl &url)
+/*!
+ * A version in the package version list has been selected, send
+ * the details to the signal to show the version.
+ */
+void MainWindow::onClickedVersion(const QModelIndex &index)
 {
-    QString filetype = QFileInfo(url.fileName()).suffix();
-    if (filetype == "ebuild") {
-        QString filename = QFileInfo(url.fileName()).fileName();
-        showEbuildSource(url, filename);
-    }
-    if (url.path() == "BACK" && html != nullptr) {
-        ui->packageDescription->setHtml(
-            QString::fromStdString(html->toString()));
-    }
+    // Gets the neccessary values from the clicked line (repo may be blank)
+    QString repo = index.model()
+                       ->data(index.siblingAtColumn(EbuildColumn::Repository))
+                       .toString();
+    QString category = index.model()
+                           ->data(index.siblingAtColumn(EbuildColumn::Category))
+                           .toString();
+    QString package = index.model()
+                          ->data(index.siblingAtColumn(EbuildColumn::Package))
+                          .toString();
+    QString version = index.model()
+                          ->data(index.siblingAtColumn(EbuildColumn::Version))
+                          .toString();
+
+    emit showEbuild(repo, category, package, version);
 }
 
+/// Show the About Qt Dialog Box.
+/// License conditions etc
 void MainWindow::aboutQt()
 {
     QMessageBox::aboutQt(this, "Vizzyix");

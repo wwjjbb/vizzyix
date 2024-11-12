@@ -5,7 +5,7 @@
 custom_target('zz_scripts_files',
     input: [
         'eix.ebuild',
-        'mkconfig',
+        'eix.ebuild.license',
         'readme.txt',
         'vizzyix.ebuild',
         'vizzyix.ebuild.license',

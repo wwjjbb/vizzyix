@@ -1,7 +1,7 @@
-# Copyright 1999-2022 Gentoo Authors
+# Copyright 1999-2024 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=7
+EAPI=8
 
 inherit autotools bash-completion-r1 tmpfiles
 
@@ -11,7 +11,7 @@ SRC_URI="https://github.com/vaeth/eix/releases/download/v${PV}/${P}.tar.xz"
 
 LICENSE="GPL-2"
 SLOT="0"
-KEYWORDS="~alpha ~amd64 ~arm ~arm64 ~hppa ~ia64 ~m68k ~mips ~ppc ~ppc64 ~riscv ~s390 ~sparc ~x86 ~x64-cygwin ~amd64-linux ~x86-linux ~ppc-macos ~x64-macos ~sparc-solaris ~sparc64-solaris ~x64-solaris ~x86-solaris"
+KEYWORDS="~alpha ~amd64 ~arm ~arm64 ~hppa ~ia64 ~loong ~m68k ~mips ~ppc ~ppc64 ~riscv ~s390 ~sparc ~x86 ~x64-cygwin ~amd64-linux ~x86-linux ~ppc-macos ~x64-macos ~sparc-solaris ~sparc64-solaris ~x64-solaris ~x86-solaris"
 IUSE="debug doc nls protobuf sqlite"
 
 DEPEND="
@@ -24,6 +24,7 @@ RDEPEND="${DEPEND}
 	protobuf? ( dev-libs/protobuf:=  )"
 BDEPEND="
 	app-arch/xz-utils
+	virtual/pkgconfig
 	nls? ( sys-devel/gettext )"
 
 pkg_setup() {
@@ -63,6 +64,7 @@ src_configure() {
 		# paths
 		--with-portage-rootpath="${ROOTPATH}"
 		--with-eprefix-default="${EPREFIX}"
+		--with-sh-shebang="${EPREFIX}/bin/sh"
 
 		# build a single executable with symlinks
 		--disable-separate-binaries
@@ -86,7 +88,7 @@ src_install() {
 	dobashcomp bash/eix
 	dotmpfiles tmpfiles.d/eix.conf
 
-	# Where else would .proto files go??
+	# Or, possibly install as a header? i.e. /usr/include/eix?
 	insinto /usr/share/eix
 	doins src/output/eix.proto
 
@@ -107,4 +109,3 @@ pkg_postrm() {
 		rm -rf "${EROOT}/var/cache/${PN}" || die
 	fi
 }
-

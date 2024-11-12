@@ -16,9 +16,11 @@ class CategoryTreeModel : public QAbstractItemModel
 
     QVariant data(const QModelIndex &index, int role) const override;
     Qt::ItemFlags flags(const QModelIndex &index) const override;
-    QVariant headerData(int section, Qt::Orientation orientation,
+    QVariant headerData(int section,
+                        Qt::Orientation orientation,
                         int role = Qt::DisplayRole) const override;
-    QModelIndex index(int row, int column,
+    QModelIndex index(int row,
+                      int column,
                       const QModelIndex &parent = QModelIndex()) const override;
     QModelIndex parent(const QModelIndex &index) const override;
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
@@ -26,7 +28,8 @@ class CategoryTreeModel : public QAbstractItemModel
 
     void startUpdate();
     void endUpdate();
-    void addCategory(const uint categoryIndex, const QString &categoryName,
+    void addCategory(const uint categoryIndex,
+                     const QString &categoryName,
                      const size_t categorySize);
     void clear();
 

@@ -1,4 +1,14 @@
 Changelog for vizzyix - a portage package browser
 
+vizzyix-0.5.0
+  - remembered the Changelog this time!
+  - clean up the two bottom panes
+    - lefthand is just the summary
+    - righthand is just a list of available versions, click one to get
+      a non-modal dialog showing the ebuild content & file list
+  - added logging with log4cxx, replaces qDebug output
+
+....
+
 vizzyix-0.0.4
-	- first vaguely useful version
+  - first vaguely useful version

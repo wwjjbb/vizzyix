@@ -4,6 +4,7 @@
 #include "categorytreemodel.h"
 
 #include <QDebug>
+#include <QtLogging>
 
 CategoryTreeModel::CategoryTreeModel(QObject *)
 {
@@ -43,7 +44,8 @@ Qt::ItemFlags CategoryTreeModel::flags(const QModelIndex &index) const
     return QAbstractItemModel::flags(index);
 }
 
-QVariant CategoryTreeModel::headerData(int section, Qt::Orientation orientation,
+QVariant CategoryTreeModel::headerData(int section,
+                                       Qt::Orientation orientation,
                                        int role) const
 {
     if (orientation == Qt::Horizontal && role == Qt::DisplayRole &&
@@ -54,8 +56,8 @@ QVariant CategoryTreeModel::headerData(int section, Qt::Orientation orientation,
     return QVariant();
 }
 
-QModelIndex CategoryTreeModel::index(int row, int column,
-                                     const QModelIndex &parent) const
+QModelIndex
+CategoryTreeModel::index(int row, int column, const QModelIndex &parent) const
 {
     if (!hasIndex(row, column, parent))
         return QModelIndex();
@@ -133,32 +135,45 @@ void CategoryTreeModel::addCategory(const uint categoryIndex,
                                     const QString &categoryName,
                                     const size_t categorySize)
 {
-    // There are one or two parts to the name, i.e. one dash
-    QStringList partName = categoryName.split('-');
-    bool splitName = (partName.length() > 1);
+    // There should be one or two parts to the name, i.e. one dash
+    // Generally it's just "virtual" with one part.
+    // A dash is not expected as the first character
 
-    if (partName.length() > 2) {
-        // TODO: deal with unexpected category names
-        qDebug() << "Category name with >2 dashes:" << categoryName;
-    }
+    int dashPos = categoryName.indexOf('-');
+    bool splitName = (dashPos >= 0);
+
+    QString part1 = splitName ? categoryName.sliced(0, dashPos) : categoryName;
+    QString part2 = splitName ? categoryName.sliced(dashPos + 1) : "";
+
+    if (categoryName == "")
+        qWarning() << "(addCategory) blank category name at index"
+                   << categoryIndex;
+
+    if (dashPos == 0)
+        qWarning() << "(addCategory) category name starts with dash:"
+                   << categoryName;
+
+    if (part2.indexOf('-') >= 0)
+        qWarning() << "(addCategory) category name contains 2+ dashes:"
+                   << categoryName;
 
     if (!splitName) {
         QVector<QVariant> data;
-        data << partName[0] << QVariant::fromValue(categorySize)
+        data << part1 << QVariant::fromValue(categorySize)
              << QVariant::fromValue(categoryIndex);
 
         (void)allItem_->appendChild(data);
     } else {
-        CategoryTreeItem *top = allItem_->findChild(partName[0]);
+        CategoryTreeItem *top = allItem_->findChild(part1);
         if (!top) {
             QVector<QVariant> topData;
-            topData << partName[0] << 0 << -1;
+            topData << part1 << 0 << -1;
 
             top = allItem_->appendChild(topData);
         }
 
         QVector<QVariant> data;
-        data << partName[1] << QVariant::fromValue(categorySize)
+        data << part2 << QVariant::fromValue(categorySize)
              << QVariant::fromValue(categoryIndex);
 
         (void)top->appendChild(data);

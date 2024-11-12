@@ -283,13 +283,15 @@ void TestReportModelItem::test_cached_values()
     QVERIFY(qtcreator.installed());
     QVERIFY(qtcreator.installType());
 
-    PackageReportItem qtcore(
-        cat1.category(), cat1.package(pkg_dev_qt_ww_qtcore), emptyVersionMap);
+    PackageReportItem qtcore(cat1.category(),
+                             cat1.package(pkg_dev_qt_ww_qtcore),
+                             emptyVersionMap);
     QVERIFY(qtcore.installed());
     QVERIFY(!qtcore.installType());
 
-    PackageReportItem qtdiag(
-        cat1.category(), cat1.package(pkg_dev_qt_ww_qtdiag), emptyVersionMap);
+    PackageReportItem qtdiag(cat1.category(),
+                             cat1.package(pkg_dev_qt_ww_qtdiag),
+                             emptyVersionMap);
     QVERIFY(!qtdiag.installed());
     QVERIFY(!qtdiag.installType());
 
@@ -302,8 +304,7 @@ void TestReportModelItem::test_cached_values()
 
 int TestReportModelItem::findCat(std::string catName)
 {
-    int catNumber;
-    for (catNumber = 0; catNumber < eix.category_size(); ++catNumber) {
+    for (int catNumber = 0; catNumber < eix.category_size(); ++catNumber) {
         if (catName == eix.category(catNumber).category()) {
             return catNumber;
         }
@@ -313,11 +314,9 @@ int TestReportModelItem::findCat(std::string catName)
 
 int TestReportModelItem::findPkg(int catNumber, std::string pkgName)
 {
-    int pkgNumber;
-
     if (catNumber >= 0 && catNumber < eix.category_size()) {
         const eix_proto::Category &cat = eix.category(catNumber);
-        for (pkgNumber = 0; pkgNumber < cat.package_size(); ++pkgNumber) {
+        for (int pkgNumber = 0; pkgNumber < cat.package_size(); ++pkgNumber) {
             if (pkgName == cat.package(pkgNumber).name()) {
                 return pkgNumber;
             }

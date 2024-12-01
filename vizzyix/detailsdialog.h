@@ -12,6 +12,8 @@ namespace Ui
 class DetailsDialog;
 }
 
+class EbuildSyntaxHighlighter;
+
 class DetailsDialog : public QDialog
 {
     Q_OBJECT
@@ -37,6 +39,7 @@ class DetailsDialog : public QDialog
     QString category;
     QString package;
     QString version;
+    EbuildSyntaxHighlighter *highlighter;
 
     void updateDetails();
     void updateEbuildTab();

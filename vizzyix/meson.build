@@ -16,6 +16,7 @@ vizzyix_src = [
     'combinedpackageinfo.cpp',
     'combinedpackagelist.cpp',
     'detailsdialog.cpp',
+    'ebuildsyntaxhighlighter.cpp',
     'eixprotohelper.cpp',
     'htmlgenerator.cpp',
     'main.cpp',
@@ -43,6 +44,7 @@ vizzyix_moc_hdr = [
     'applicationdata.h',
     'categorytreemodel.h',
     'detailsdialog.h',
+    'ebuildsyntaxhighlighter.h',
     'mainwindow.h',
     'packagereportmodel.h',
     'searchboxvalidator.h'

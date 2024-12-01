@@ -3,13 +3,9 @@
 
 #include "categorytreeitem.h"
 
-/*
- * CategoryTreeItem::CategoryTreeItem
- *
- * Constructor
- *
- * Private to ensure that the appropriate factory is used to create new
- * instances, thereby ensuring the parent field is always set correctly.
+/*!
+ * Private constructor to ensure that the appropriate factory is used to create
+ * new instances, thereby ensuring the parent field is always set correctly.
  *
  * Constructs an instance of the class. All field values are provided by the
  * matching parameters.
@@ -24,13 +20,11 @@
  */
 CategoryTreeItem::CategoryTreeItem(const QVector<QVariant> &data,
                                    CategoryTreeItem *parentItem)
-    : itemData_(data), parentItem_(parentItem)
+    : oItemData(data), oParentItem(parentItem)
 {
 }
 
-/*
- * CategoryTreeItem::newRootItem
- *
+/*!
  * A static factory routine to generate a root node.
  *
  * data:
@@ -44,21 +38,15 @@ CategoryTreeItem *CategoryTreeItem::newRootItem(const QVector<QVariant> &data)
     return new CategoryTreeItem(data);
 }
 
-/*
- * CategoryTreeItem::~CategoryTreeItem
- *
- * Destructor
- *
- * Releases all child items.
+/*!
+ * Destructor, releases all child items.
  */
 CategoryTreeItem::~CategoryTreeItem()
 {
     freeChildItems();
 }
 
-/*
- * CategoryTreeItem::CategoryTreeItem
- *
+/*!
  * Copy constructor
  *
  * other:
@@ -69,16 +57,13 @@ CategoryTreeItem::~CategoryTreeItem()
  * each of it's children.
  */
 CategoryTreeItem::CategoryTreeItem(const CategoryTreeItem &other)
-    : childItems_(other.childItems_), itemData_(other.itemData_),
-      parentItem_(other.parentItem_)
+    : oChildItems(other.oChildItems), oItemData(other.oItemData),
+      oParentItem(other.oParentItem)
 {
 }
 
-/*
- * swap
- *
- * Dummy placeholder
- *
+/*!
+ * Dummy placeholder.
  * This is private to ensure it's not used - the parents would need to be
  * updated to make this preserve the invariants.
  */
@@ -86,11 +71,8 @@ void swap(CategoryTreeItem &, CategoryTreeItem &)
 {
 }
 
-/*
- * CategoryTreeItem::operator =
- *
- * Dummy placeholder
- *
+/*!
+ * Dummy placeholder.
  * This is private to ensure it's not used.
  *
  * Returns:
@@ -101,11 +83,8 @@ CategoryTreeItem &CategoryTreeItem::operator=(CategoryTreeItem &)
     return *this;
 }
 
-/*
- * CategoryTreeItem::appendChild
- *
- * A factory routine which creates a new child node
- *
+/*!
+ * A factory routine which creates a new child node.
  * Adds a new child item with the given data to this object. This is the only
  * supported way to add a child item.
  *
@@ -118,29 +97,23 @@ CategoryTreeItem &CategoryTreeItem::operator=(CategoryTreeItem &)
  */
 CategoryTreeItem *CategoryTreeItem::appendChild(const QVector<QVariant> &data)
 {
-    auto child = new CategoryTreeItem(data, this);
-    childItems_.append(child);
-    return child;
+    auto newChild = new CategoryTreeItem(data, this);
+    oChildItems.append(newChild);
+    return newChild;
 }
 
-/*
- * CategoryTreeItem::freeChildItems
- *
+/*!
  * Frees all child nodes belonging to this object
- *
  * All of the child items are deleted, and the list is emptied.
  */
 void CategoryTreeItem::freeChildItems()
 {
-    qDeleteAll(childItems_);
-    childItems_.clear();
+    qDeleteAll(oChildItems);
+    oChildItems.clear();
 }
 
-/*
- * CategoryTreeItem::child
- *
- * Finds the nth child item
- *
+/*!
+ * Finds the nth child item.
  * Given a row number, returns a pointer to the child tree item if row >= 0 and
  * row <childCount(). Otherwise returns a null instead.
  *
@@ -148,23 +121,19 @@ void CategoryTreeItem::freeChildItems()
  *     The index of the child to be located
  *
  * Returns:
- *     A pointer to the child item, or nullptr if the row number was out of
- * range.
+ *     A pointer to child item, or nullptr if the row number was out of range.
  *
  */
 CategoryTreeItem *CategoryTreeItem::child(int row) const
 {
-    if (row < 0 || row >= childItems_.count())
+    if (row < 0 || row >= oChildItems.count())
         return nullptr;
 
-    return childItems_.at(row);
+    return oChildItems.at(row);
 }
 
-/*
- * CategoryTreeItem::childCount
- *
+/*!
  * Returns the number of child items owned by this item.
- *
  * This is the number of rows for this node in the tree model.
  *
  * Returns:
@@ -173,14 +142,11 @@ CategoryTreeItem *CategoryTreeItem::child(int row) const
  */
 int CategoryTreeItem::childCount() const
 {
-    return childItems_.count();
+    return oChildItems.count();
 }
 
-/*
- * CategoryTreeItem::columnCount
- *
+/*!
  * Returns the number of columms in the data.
- *
  * All the tree nodes have the same number of columns - Qt treats as a table.
  *
  * Return:
@@ -188,14 +154,11 @@ int CategoryTreeItem::childCount() const
  */
 int CategoryTreeItem::columnCount() const
 {
-    return itemData_.count();
+    return oItemData.count();
 }
 
-/*
- * CategoryTreeItem::data
- *
- * Returns the data for the given column
- *
+/*!
+ * Returns the data for the given column.
  * This is the actual value found, or an empty QVariant if the column number is
  * out of range.
  *
@@ -207,17 +170,14 @@ int CategoryTreeItem::columnCount() const
  */
 QVariant CategoryTreeItem::data(int column) const
 {
-    if (column < 0 || column >= itemData_.size())
+    if (column < 0 || column >= oItemData.size())
         return QVariant();
-    return itemData_.at(column);
+    return oItemData.at(column);
 }
 
-/*
- * CategoryTreeItem::setData
- *
- * Sets the value of given column
- *
- * Sets the value. The value is ignored if the column number is out of range.
+/*!
+ * Sets the value of given column.
+ * The value is ignored if the column number is out of range.
  *
  * column:
  *     The column number to be set
@@ -227,16 +187,13 @@ QVariant CategoryTreeItem::data(int column) const
  */
 void CategoryTreeItem::setData(int column, const QVariant value)
 {
-    if (column >= 0 && column < itemData_.size()) {
-        itemData_[column] = value;
+    if (column >= 0 && column < oItemData.size()) {
+        oItemData[column] = value;
     }
 }
 
-/*
- * CategoryTreeItem::row
- *
- * Gets the object;s row number within the parent
- *
+/*!
+ * Gets the object's row number within the parent.
  * The row number is the object's index in the parent's child list.
  *
  * Return:
@@ -244,18 +201,15 @@ void CategoryTreeItem::setData(int column, const QVariant value)
  */
 int CategoryTreeItem::row() const
 {
-    if (parentItem_)
-        return parentItem_->childItems_.indexOf(
+    if (oParentItem)
+        return oParentItem->oChildItems.indexOf(
             const_cast<CategoryTreeItem *>(this));
 
     return 0;
 }
 
-/*
- * CategoryTreeItem::parentItem
- *
- * Identifies the parent of this node
- *
+/*!
+ * Identifies the parent of this node.
  * The parent of the tree's root is a null pointer. All other nodes will
  * have an actual parent.
  *
@@ -264,24 +218,17 @@ int CategoryTreeItem::row() const
  */
 CategoryTreeItem *CategoryTreeItem::parentItem() const
 {
-    return parentItem_;
+    return oParentItem;
 }
 
-/*
- * CategoryTreeItem::packageCount
- *
- * Returns:
- *     The number of packages owned by this item
- */
+/// Returns the number of packages owned by this item
 uint CategoryTreeItem::packageCount() const
 {
     return data(CategoryTreeItem::Column::PkgCount).toInt();
 }
 
-/*
- * CategoryTreeItem::setPackageCount
- *
- * Sets the number of packages owned by this node
+/*!
+ * Sets the number of packages owned by this node.
  *
  * pkgCount:
  *     The number of packages
@@ -291,11 +238,8 @@ void CategoryTreeItem::setPackageCount(uint pkgCount)
     setData(CategoryTreeItem::Column::PkgCount, QVariant::fromValue(pkgCount));
 }
 
-/*
- * CategoryTreeItem::isContainer
- *
- * Whether this node is a container
- *
+/*!
+ * Whether this node is a container.
  * Containers can contain other child items; those that can't are paired with an
  * eix category. e.g. sys-kernel/gentoo-sources is not a container but 'sys' is
  * and 'kernel' is.
@@ -309,11 +253,8 @@ bool CategoryTreeItem::isContainer() const
     return categoryNumber() < 0;
 }
 
-/*
- *  CategoryTreeItem::categoryNumber
- *
- *  Get the category number of this node.
- *
+/*!
+ * Get the category number of this node.
  * The value is <0 for containers, or 0+ for the index of the category in the
  * eix data.
  *
@@ -325,10 +266,8 @@ int CategoryTreeItem::categoryNumber() const
     return data(Column::CatIndex).toInt();
 }
 
-/*
- * CategoryTreeItem::findChild
- *
- * Looks for the given name in child list and returns the child
+/*!
+ * Looks for the given name in child list and returns the child.
  *
  * childName:
  *     The name to search for

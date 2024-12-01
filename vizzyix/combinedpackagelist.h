@@ -26,7 +26,7 @@ class CombinedPackageList
     CombinedPackageList(const CombinedPackageList &) = delete;
     CombinedPackageList &operator=(CombinedPackageList &) = delete;
 
-    void load(const eix_proto::Collection &eix, bool filters);
+    void load(const eix_proto::Collection &eix, bool filters, const QString &searchText);
 
     bool isZombie(const std::string &categoryName,
                   const std::string &packageName) const;
@@ -40,7 +40,7 @@ class CombinedPackageList
 
     void clear();
     void readEixData(const eix_proto::Collection &eix);
-    void readPortagePackageDatabase(bool filtered);
+    void readPortagePackageDatabase(bool filtered, const QString &searchText);
     void identifyZombies();
 
     void addVersion(const QString &categoryName,

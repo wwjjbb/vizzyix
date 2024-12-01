@@ -38,15 +38,22 @@ class CategoryTreeItem
 
     CategoryTreeItem *findChild(const QString &childName) const;
 
+    /// Enum for the column names
     enum Column { Name, PkgCount, CatIndex };
 
   private:
-    // Hide to disallow instances being be created on stack
+    // Hidden to disallow instances being be created on stack
     explicit CategoryTreeItem(const QVector<QVariant> &data,
                               CategoryTreeItem *parentItem = nullptr);
 
-    QVector<CategoryTreeItem *> childItems_;
-    QVector<QVariant> itemData_;
+    /// List of child nodes for this item
+    QVector<CategoryTreeItem *> oChildItems;
+
+    /// Data for each column
+    QVector<QVariant> oItemData;
+
+    /// Reference to the parent item - nullptr for root, or another
+    /// CategoryTreeItem
     // TODO - parentItem should be const but there are complications with that
-    CategoryTreeItem *parentItem_;
+    CategoryTreeItem *oParentItem;
 };

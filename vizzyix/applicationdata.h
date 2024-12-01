@@ -52,18 +52,19 @@ class ApplicationData : public QObject
     /// When the eix database was last loaded into memory
     QDateTime lastLoadTime;
 
-    /// The protobuf copy of the eix database. This may be filtered.
+    /// The protobuf copy of the eix database.
+    /// This may be filtered, i.e. not contain the full list of packages
     eix_proto::Collection eix;
 
     /// A list of all known packages, generated from the eix data
     /// and overlaid with the package database (installed packages)
-    CombinedPackageList packageList{packageDatabaseRoot};
+    CombinedPackageList combinedPackageList{packageDatabaseRoot};
 
     /// The data model for the category tree (shown at left top)
     CategoryTreeModel categoryTreeModel;
 
     /// The data model for the package report list (shown at top right)
-    PackageReportModel packageModel;
+    PackageReportModel packageReportModel;
 
   signals:
     void eixRunning(bool running);
@@ -78,13 +79,13 @@ class ApplicationData : public QObject
 
   private:
     /// The current search filter string
-    QString search_{""};
+    QString oSearch{""};
 
     /// The top level filter
-    SelectionFilter selectionFilter_{All};
+    SelectionFilter oSelectionFilter{All};
 
     /// The handle for the eix process
-    QProcess *eixProcess = nullptr;
+    QProcess *oEixProcess = nullptr;
 
     /// Somewhere to catch the output from the eix process.
     /// The content of the file is protobuf data.
@@ -93,7 +94,7 @@ class ApplicationData : public QObject
   private:
     /// The single instance of this class.
     /// The unique_ptr ensures the object is properly disposed.
-    static std::unique_ptr<ApplicationData> appData_;
+    static std::unique_ptr<ApplicationData> oAppData;
 
   private slots:
     void onEixFinished(int exitCode, QProcess::ExitStatus);

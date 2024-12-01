@@ -36,6 +36,6 @@ class CategoryTreeModel : public QAbstractItemModel
     const CategoryTreeItem *allItem() const;
 
   private:
-    CategoryTreeItem *rootItem_;
-    CategoryTreeItem *allItem_;
+    CategoryTreeItem *oRootItem;
+    CategoryTreeItem *oAllItem;
 };

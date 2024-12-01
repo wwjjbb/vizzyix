@@ -37,6 +37,7 @@ class PackageReportItem
     QString highestVersionName() const;
     const eix_proto::Package &packageDetails() const;
 
+    /// There's an enum value for each column in the package report
     enum Column {
         Installed,
         Name,
@@ -48,14 +49,27 @@ class PackageReportItem
   private:
     void cacheValues();
 
-    // Need to define static attributes in the cpp file
-    const static QVector<Qt::ItemDataRole> role_;
-    static QVariant boldFont_;
+    /// oRole[N] -> role of column N
+    const static QVector<Qt::ItemDataRole> oRole;
 
-    const eix_proto::Package *packageDetails_;
-    std::string catName_;
-    eix_proto::MaskFlags_MaskFlag installType_;
-    bool installed_;
-    QStringList versions_;
-    VersionMap zombieVersions_;
+    /// Holds the QFont value for bold text
+    static QVariant oBoldFont;
+
+    /// Pointer to the EIXDB data for the package
+    const eix_proto::Package *oPackageDetails;
+
+    /// The catalog name
+    std::string oCatName;
+
+    /// The WORLD/SET/SYSTEM/UNKNOWN indicator
+    eix_proto::MaskFlags_MaskFlag oInstallType;
+
+    /// Whether any versions of package are installed
+    bool oIsInstalled;
+
+    /// Package versions, in ascending order
+    QStringList oVersions;
+
+    /// Versions of this package that are zombies
+    VersionMap oZombieVersions;
 };

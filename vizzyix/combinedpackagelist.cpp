@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 #include "combinedpackagelist.h"
+#include "applicationdata.h"
 #include "combinedpackageinfo.h"
 
 #include <QDebug>
@@ -23,11 +24,13 @@ CombinedPackageList::CombinedPackageList(const QString &pkgDir)
  * Builds a list of any that are installed but not in the eix data,
  * called zombies here.
  */
-void CombinedPackageList::load(const eix_proto::Collection &eix, bool filters)
+void CombinedPackageList::load(const eix_proto::Collection &eix,
+                               bool filters,
+                               const QString &searchText)
 {
     clear();
     readEixData(eix);
-    readPortagePackageDatabase(filters);
+    readPortagePackageDatabase(filters, searchText);
     identifyZombies();
 }
 
@@ -157,9 +160,9 @@ void CombinedPackageList::readEixData(const eix_proto::Collection &eix)
  *      - if a cat/pack has been removed from portage, it's zombie will be
  *        ignored.
  */
-void CombinedPackageList::readPortagePackageDatabase(bool filtered)
+void CombinedPackageList::readPortagePackageDatabase(bool filtered,
+                                                     const QString &searchText)
 {
-    // TODO: find pkg db from a system variable, or config setting
     foreach (const auto categoryInfo,
              oPkgDirectory.entryInfoList(QDir::NoDotAndDotDot | QDir::Dirs)) {
 
@@ -183,28 +186,31 @@ void CombinedPackageList::readPortagePackageDatabase(bool filtered)
 
             int posver = filename.indexOf(QRegularExpression("\\-\\d"));
             if (posver < 0) {
-                // TODO: so far not seen; report any problem name/version  so it
-                // can be fixed
-                qDebug() << "CombinedPackageList::readPortagePackageDatabase "
-                         << filename << " **** No version found";
+                qCritical()
+                    << "CombinedPackageList::readPortagePackageDatabase:"
+                    << filename << "**** No version found";
             } else {
                 QString packageName = filename.sliced(0, posver);
-                QString packageVersion =
-                    filename.sliced(posver + 1,
-                                    filename.length() - (posver + 1));
+                QString packageVersion = filename.sliced(posver + 1);
 
-                // This assumes the database is already populated with eix data.
-                // If the eix search was filtered, only want to add versions to
-                // existing entries. If the eix search was not filtered, always
-                // want to add versions.
+                // The only filter need to check is the search text,
+                // the select all/installed/world don't affect pkgdb
+                // items:
+                //   - all : n/a, pkgdb are always installed
+                //   - installed : pkgdb by definition are installed
+                //   - world : pkgdb are installed and eix will set type
+                bool include =
+                    searchText.isEmpty() ||
+                    packageName.contains(searchText, Qt::CaseInsensitive);
 
-                addVersion(categoryName,
-                           packageName,
-                           packageVersion,
-                           DataOrigin::PkgData,
-                           filtered ? MergeMode::MergeOnly
-                                    : MergeMode::MergeAdd,
-                           packageInfo.absoluteFilePath());
+                if (include) {
+                    addVersion(categoryName,
+                               packageName,
+                               packageVersion,
+                               DataOrigin::PkgData,
+                               MergeMode::MergeAdd,
+                               packageInfo.absoluteFilePath());
+                }
             }
         }
     }
@@ -269,7 +275,7 @@ void CombinedPackageList::addVersion(const QString &categoryName,
             // TODO - should apply filter rather than do this
             return;
         }
-        catpkg = oPackages.insert(key, QMap<QString, CombinedPackageInfo>());
+        catpkg = oPackages.insert(key, VersionMap());
     }
     auto &versionList = catpkg.value();
 

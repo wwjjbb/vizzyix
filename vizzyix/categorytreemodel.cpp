@@ -6,22 +6,32 @@
 #include <QDebug>
 #include <QtLogging>
 
+/*!
+ * Creates the column titles and a top level node called "All".
+ */
 CategoryTreeModel::CategoryTreeModel(QObject *)
 {
     // The tree model always contains the root node (headers), and a child of
     // this which is the visible root of all the categories.
 
-    rootItem_ = CategoryTreeItem::newRootItem(
+    oRootItem = CategoryTreeItem::newRootItem(
         {tr("Categories"), tr("Pkgs"), tr("Idx")});
 
-    allItem_ = rootItem_->appendChild({tr("All"), 0, -1});
+    oAllItem = oRootItem->appendChild({tr("All"), 0, -1});
 }
 
+/*!
+ * Destructor frees up all child nodes
+ */
 CategoryTreeModel::~CategoryTreeModel()
 {
-    delete rootItem_;
+    delete oRootItem;
 }
 
+/*!
+ * Given a model index and role, this returns the data for the associated
+ * column. It only responds to DisplayRole, returning blanks otherwise.
+ */
 QVariant CategoryTreeModel::data(const QModelIndex &index, int role) const
 {
     if (!index.isValid())
@@ -30,12 +40,13 @@ QVariant CategoryTreeModel::data(const QModelIndex &index, int role) const
     if (role != Qt::DisplayRole)
         return QVariant();
 
-    CategoryTreeItem *item =
+    const CategoryTreeItem *item =
         static_cast<CategoryTreeItem *>(index.internalPointer());
 
     return item->data(index.column());
 }
 
+/// Returns the item flags for the given model index
 Qt::ItemFlags CategoryTreeModel::flags(const QModelIndex &index) const
 {
     if (!index.isValid())
@@ -44,28 +55,35 @@ Qt::ItemFlags CategoryTreeModel::flags(const QModelIndex &index) const
     return QAbstractItemModel::flags(index);
 }
 
+/// Returns the appropriate header column (for horizontal DisplayRole)
 QVariant CategoryTreeModel::headerData(int section,
                                        Qt::Orientation orientation,
                                        int role) const
 {
     if (orientation == Qt::Horizontal && role == Qt::DisplayRole &&
         section >= 0 && section < columnCount()) {
-        return rootItem_->data(section);
+        return oRootItem->data(section);
     }
 
     return QVariant();
 }
 
+/*!
+ * Returns index for given row and column of parent.
+ * Determines the categoryTreeItem for the parent, uses 'row' to select a child,
+ * then creates an index for the child item.
+ * (Why? What's this achieve??)
+ */
 QModelIndex
 CategoryTreeModel::index(int row, int column, const QModelIndex &parent) const
 {
     if (!hasIndex(row, column, parent))
         return QModelIndex();
 
-    CategoryTreeItem *parentItem;
+    const CategoryTreeItem *parentItem;
 
     if (!parent.isValid())
-        parentItem = rootItem_;
+        parentItem = oRootItem;
     else
         parentItem = static_cast<CategoryTreeItem *>(parent.internalPointer());
 
@@ -76,6 +94,7 @@ CategoryTreeModel::index(int row, int column, const QModelIndex &parent) const
     return QModelIndex();
 }
 
+/// Finds the index for the parent of the given index
 QModelIndex CategoryTreeModel::parent(const QModelIndex &index) const
 {
     if (!index.isValid())
@@ -85,49 +104,53 @@ QModelIndex CategoryTreeModel::parent(const QModelIndex &index) const
         static_cast<CategoryTreeItem *>(index.internalPointer());
     CategoryTreeItem *parentItem = childItem->parentItem();
 
-    if (parentItem == rootItem_)
+    if (parentItem == oRootItem)
         return QModelIndex();
 
     return createIndex(parentItem->row(), 0, parentItem);
 }
 
+/// Determines number of rows for given model index
 int CategoryTreeModel::rowCount(const QModelIndex &parent) const
 {
-    CategoryTreeItem *parentItem;
+    const CategoryTreeItem *parentItem;
     if (parent.column() > 0)
         return 0;
 
     if (!parent.isValid())
-        parentItem = rootItem_;
+        parentItem = oRootItem;
     else
         parentItem = static_cast<CategoryTreeItem *>(parent.internalPointer());
 
     return parentItem->childCount();
 }
 
+/// Determines number of columns for given model index
 int CategoryTreeModel::columnCount(const QModelIndex &parent) const
 {
     if (parent.isValid())
         return static_cast<CategoryTreeItem *>(parent.internalPointer())
             ->columnCount();
 
-    return rootItem_->columnCount();
+    return oRootItem->columnCount();
 }
 
+/// Detach model while updating contents
 void CategoryTreeModel::startUpdate()
 {
     beginResetModel();
 }
 
+/// Reattach model after updating contents
 void CategoryTreeModel::endUpdate()
 {
     endResetModel();
 }
 
 /*!
- * \brief CategoryTreeModel::addCategory adds an eix category to the tree.
- * \param categoryIndex - entry number, 0+, in the eix collection of categories.
- * \param categoryName - the name of the category, which by convention usually
+ * Adds an eix category to the tree.
+ * categoryIndex: - entry number, 0+, in the eix collection of categories.
+ * categoryName: - the name of the category, which by convention usually
  * contains one dash \param categorySize - number of packages in the category,
  * 1+
  */
@@ -158,37 +181,38 @@ void CategoryTreeModel::addCategory(const uint categoryIndex,
                    << categoryName;
 
     if (!splitName) {
-        QVector<QVariant> data;
-        data << part1 << QVariant::fromValue(categorySize)
+        QVector<QVariant> node;
+        node << part1 << QVariant::fromValue(categorySize)
              << QVariant::fromValue(categoryIndex);
 
-        (void)allItem_->appendChild(data);
+        (void)oAllItem->appendChild(node);
     } else {
-        CategoryTreeItem *top = allItem_->findChild(part1);
+        CategoryTreeItem *top = oAllItem->findChild(part1);
         if (!top) {
-            QVector<QVariant> topData;
-            topData << part1 << 0 << -1;
+            QVector<QVariant> topNode;
+            topNode << part1 << 0 << -1;
 
-            top = allItem_->appendChild(topData);
+            top = oAllItem->appendChild(topNode);
         }
 
-        QVector<QVariant> data;
-        data << part2 << QVariant::fromValue(categorySize)
+        QVector<QVariant> node;
+        node << part2 << QVariant::fromValue(categorySize)
              << QVariant::fromValue(categoryIndex);
 
-        (void)top->appendChild(data);
+        (void)top->appendChild(node);
         top->setPackageCount(top->packageCount() + categorySize);
     }
-    allItem_->setPackageCount(allItem_->packageCount() + categorySize);
+    oAllItem->setPackageCount(oAllItem->packageCount() + categorySize);
 }
 
+/// Clear the tree data - leave the root item (headers) and the "All" item
 void CategoryTreeModel::clear()
 {
-    allItem_->freeChildItems();
-    allItem_->setData(CategoryTreeItem::Column::PkgCount, 0);
+    oAllItem->freeChildItems();
+    oAllItem->setData(CategoryTreeItem::Column::PkgCount, 0);
 }
 
 const CategoryTreeItem *CategoryTreeModel::allItem() const
 {
-    return allItem_;
+    return oAllItem;
 }

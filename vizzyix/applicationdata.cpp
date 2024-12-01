@@ -10,7 +10,7 @@
 #include <fstream>
 #include <iostream>
 
-std::unique_ptr<ApplicationData> ApplicationData::appData_;
+std::unique_ptr<ApplicationData> ApplicationData::oAppData;
 
 /*!
  * Constructor doesn't need to do anything
@@ -25,10 +25,10 @@ ApplicationData::ApplicationData()
  */
 ApplicationData *ApplicationData::data()
 {
-    if (!appData_) {
-        appData_.reset(new ApplicationData());
+    if (!oAppData) {
+        oAppData.reset(new ApplicationData());
     }
-    return appData_.get();
+    return oAppData.get();
 }
 
 /// Whether any filters are currently set
@@ -40,25 +40,25 @@ bool ApplicationData::filters()
 /// Sets the selection filter to the given value.
 void ApplicationData::setSelectionFilter(SelectionFilter filter)
 {
-    selectionFilter_ = filter;
+    oSelectionFilter = filter;
 }
 
 /// Gets the current selection filter value.
 ApplicationData::SelectionFilter ApplicationData::selectionFilter()
 {
-    return selectionFilter_;
+    return oSelectionFilter;
 }
 
 /// Sets the search filter to the given string.
 void ApplicationData::setSearch(const QString &search)
 {
-    search_ = search;
+    oSearch = search;
 }
 
 /// Returns the current search filter.
 const QString ApplicationData::search()
 {
-    return search_;
+    return oSearch;
 }
 
 /*!
@@ -77,7 +77,7 @@ void ApplicationData::parseEixData()
     }
 
     // Merge the data for installed packages and eix info together.
-    packageList.load(eix, filters());
+    combinedPackageList.load(eix, filters(), search());
 
     setupCategoryTreeModelData();
 }
@@ -101,9 +101,9 @@ void ApplicationData::addCategory(CategoryTreeItem *catItem)
         const auto &cat = eix.category(catItem->categoryNumber());
         for (int pkgNumber = 0; pkgNumber < cat.package_size(); ++pkgNumber) {
             VersionMap zombieList =
-                packageList.zombieVersions(cat.category(),
+                combinedPackageList.zombieVersions(cat.category(),
                                            cat.package(pkgNumber).name());
-            packageModel.addPackage(cat.category(),
+            packageReportModel.addPackage(cat.category(),
                                     cat.package(pkgNumber),
                                     zombieList);
         }
@@ -140,11 +140,11 @@ void ApplicationData::setupCategoryTreeModelData()
  */
 void ApplicationData::setupPackageModelData(CategoryTreeItem *catItem)
 {
-    packageModel.startUpdate();
-    packageModel.clear();
+    packageReportModel.startUpdate();
+    packageReportModel.clear();
 
     addCategory(catItem);
-    packageModel.endUpdate();
+    packageReportModel.endUpdate();
 }
 
 /*!
@@ -168,7 +168,7 @@ void ApplicationData::loadPortageData()
     eixOutput = new QTemporaryFile();
     eixOutput->open();
 
-    eixProcess = new QProcess;
+    oEixProcess = new QProcess;
     QStringList eix_params = {"--proto"};
 
     if (filters()) {
@@ -198,24 +198,24 @@ void ApplicationData::loadPortageData()
         }
     }
 
-    eixProcess->setStandardOutputFile(eixOutput->fileName());
+    oEixProcess->setStandardOutputFile(eixOutput->fileName());
 
     // These signals get triggered by either the process completing, or by not
     // starting. Docs are not really clear on this, but experimentally it seems
     // if the executable file is not found the error happens but NOT the finish.
     // So going to assume they are exclusive. There are some other signals in
     // this class that I've decided to ignore.
-    connect(eixProcess,
+    connect(oEixProcess,
             QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
             this,
             &ApplicationData::onEixFinished);
-    connect(eixProcess,
+    connect(oEixProcess,
             &QProcess::errorOccurred,
             this,
             &ApplicationData::onEixError);
 
     // TODO: check the executable exists
-    eixProcess->start(ApplicationData::eixApp, eix_params);
+    oEixProcess->start(ApplicationData::eixApp, eix_params);
 }
 
 /*!
@@ -226,8 +226,8 @@ void ApplicationData::loadPortageData()
  */
 void ApplicationData::cleanupEixProcess()
 {
-    delete eixProcess;
-    eixProcess = nullptr;
+    delete oEixProcess;
+    oEixProcess = nullptr;
 
     delete eixOutput;
     eixOutput = nullptr;

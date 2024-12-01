@@ -112,7 +112,7 @@ MainWindow::MainWindow(QWidget *parent)
     // Assign all the models, they have all been constructed complete/empty
 
     ui->categoryTree->setModel(&ApplicationData::data()->categoryTreeModel);
-    oPackageProxyModel.setSourceModel(&ApplicationData::data()->packageModel);
+    oPackageProxyModel.setSourceModel(&ApplicationData::data()->packageReportModel);
     ui->packageListView->setModel(&oPackageProxyModel);
 
     QFont boldFont(ui->packageListView->font());
@@ -361,11 +361,11 @@ void MainWindow::showPackageDetails(const PackageReportItem &item)
 
     oHtmlDescription.hr();
 
-    auto zoms = ApplicationData::data()->packageList.zombieList();
+    auto zoms = ApplicationData::data()->combinedPackageList.zombieList();
     if (zoms.length() != 0) {
         oHtmlDescription.para(
             QString("Zombies: %1")
-                .arg(ApplicationData::data()->packageList.zombieList().join(
+                .arg(ApplicationData::data()->combinedPackageList.zombieList().join(
                     ", ")));
     }
 
@@ -532,7 +532,7 @@ void MainWindow::onPackageSelected(const QItemSelection &selected,
         // The QModelIndex is for the sort proxy, so it needs to be translated
         // to an index for the base package model.
         const PackageReportItem &item =
-            ApplicationData::data()->packageModel.packageItem(
+            ApplicationData::data()->packageReportModel.packageItem(
                 oPackageProxyModel.mapToSource(list[0]).row());
 
         showPackageDetails(item);

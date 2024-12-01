@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 #include "detailsdialog.h"
+#include "ebuildsyntaxhighlighter.h"
 #include "ui_detailsdialog.h"
 
 #include <QDebug>
@@ -23,6 +24,8 @@ DetailsDialog::DetailsDialog(QWidget *parent)
 
     // Ensure first tab is set initially
     ui->tabWidget->setCurrentIndex(0);
+
+    highlighter = new EbuildSyntaxHighlighter(ui->textEbuild->document());
 }
 
 DetailsDialog::~DetailsDialog()

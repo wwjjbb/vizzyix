@@ -49,27 +49,28 @@ class PackageReportItem
   private:
     void cacheValues();
 
-    /// oRole[N] -> role of column N
-    const static QVector<Qt::ItemDataRole> oRole;
+  private:
+    /// _role[N] -> role of column N
+    const static QVector<Qt::ItemDataRole> _role;
 
     /// Holds the QFont value for bold text
-    static QVariant oBoldFont;
+    static QVariant _boldFont;
 
     /// Pointer to the EIXDB data for the package
-    const eix_proto::Package *oPackageDetails;
+    const eix_proto::Package *_packageDetails;
 
     /// The catalog name
-    std::string oCatName;
+    std::string _catName;
 
     /// The WORLD/SET/SYSTEM/UNKNOWN indicator
-    eix_proto::MaskFlags_MaskFlag oInstallType;
+    eix_proto::MaskFlags_MaskFlag _installType;
 
     /// Whether any versions of package are installed
-    bool oIsInstalled;
+    bool _isInstalled;
 
     /// Package versions, in ascending order
-    QStringList oVersions;
+    QStringList _versions;
 
     /// Versions of this package that are zombies
-    VersionMap oZombieVersions;
+    VersionMap _zombieVersions;
 };

@@ -16,8 +16,6 @@
 typedef QPair<QString, QString> CategoryPackageName;
 typedef QMap<QString, CombinedPackageInfo> VersionMap;
 
-enum MergeMode { MergeOnly, MergeAdd };
-
 class CombinedPackageList
 {
   public:
@@ -26,7 +24,7 @@ class CombinedPackageList
     CombinedPackageList(const CombinedPackageList &) = delete;
     CombinedPackageList &operator=(CombinedPackageList &) = delete;
 
-    void load(const eix_proto::Collection &eix, bool filters, const QString &searchText);
+    void load(const eix_proto::Collection &eix, const QString &searchText);
 
     bool isZombie(const std::string &categoryName,
                   const std::string &packageName) const;
@@ -40,29 +38,28 @@ class CombinedPackageList
 
     void clear();
     void readEixData(const eix_proto::Collection &eix);
-    void readPortagePackageDatabase(bool filtered, const QString &searchText);
+    void readPortagePackageDatabase(const QString &searchText);
     void identifyZombies();
 
     void addVersion(const QString &categoryName,
                     const QString &packageName,
                     const QString &versionName,
                     DataOrigin origin,
-                    MergeMode mode,
                     const QString &packagePath = QString());
 
   private:
     /// The root directory of the package database, i.e. /var/db/pkg
-    const QDir oPkgDirectory;
+    const QDir _pkgDirectory;
 
     /*!
      * The key is the category + package name, e.g. "dev-qt" + "qt-creator".
      * The value is a map of installed versions of the package
      */
-    QMap<CategoryPackageName, VersionMap> oPackages;
+    QMap<CategoryPackageName, VersionMap> _packages;
 
     /*!
      * Category and package name of each zombie.
      * TODO - surely zombie's have version numbers!
      */
-    QSet<CategoryPackageName> oZombies;
+    QSet<CategoryPackageName> _zombies;
 };

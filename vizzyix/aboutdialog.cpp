@@ -29,7 +29,8 @@ AboutDialog::AboutDialog(QWidget *parent)
     // Connect the URL-clicked signals
 
     connect(ui->licenseInfo,
-            QOverload<const QUrl &>::of(&QTextBrowser::anchorClicked), this,
+            QOverload<const QUrl &>::of(&QTextBrowser::anchorClicked),
+            this,
             &AboutDialog::onLinkClicked);
 }
 

@@ -33,5 +33,5 @@ class HtmlGenerator
   private:
     void start(const QString &tag);
     void end(const QString &tag);
-    QStringList lines;
+    QStringList _lines;
 };

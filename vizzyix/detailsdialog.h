@@ -22,25 +22,6 @@ class DetailsDialog : public QDialog
     explicit DetailsDialog(QWidget *parent = nullptr);
     ~DetailsDialog();
 
-  private:
-    enum Tab {
-        Summary,
-        Ebuild,
-        InstalledFiles,
-        UseFlags,
-    };
-
-  private:
-    Ui::DetailsDialog *ui;
-    QStandardItemModel installedFiles;
-    QFile repoEbuildFile;
-    QDir pkgDir;
-    QString repository;
-    QString category;
-    QString package;
-    QString version;
-    EbuildSyntaxHighlighter *highlighter;
-
     void updateDetails();
     void updateEbuildTab();
     void updateInstalledFilesTab();
@@ -52,4 +33,23 @@ class DetailsDialog : public QDialog
                     const QString &category,
                     const QString &package,
                     const QString &version);
+
+  private:
+    enum Tab {
+        Summary,
+        Ebuild,
+        InstalledFiles,
+        UseFlags,
+    };
+
+  private:
+    Ui::DetailsDialog *ui;
+    QStandardItemModel _installedFiles;
+    QFile _repoEbuildFile;
+    QDir _pkgDir;
+    QString _repository;
+    QString _category;
+    QString _package;
+    QString _version;
+    EbuildSyntaxHighlighter *_highlighter;
 };

@@ -5,10 +5,8 @@
 custom_target('zz_scripts_files',
     input: [
         'eix.ebuild',
-        'eix.ebuild.license',
         'readme.txt',
         'vizzyix.ebuild',
-        'vizzyix.ebuild.license',
     ],
     output: 'nuffink',
     command: 'ls',

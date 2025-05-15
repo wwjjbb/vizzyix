@@ -2,14 +2,14 @@
 # SPDX-License-Identifier: CC0-1.0
 
 project('vizzyix', 'cpp',
-        version : '0.5.1',
+        version : '0.6.0',
         license : 'GPL-2.0-only',
         default_options : [
             'prefix=/usr',
             'sysconfdir=/etc',
             'cpp_std=c++17'
         ],
-        meson_version : '>= 1.4.1',
+        meson_version : '>= 1.7.0',
 )
 
 qt = import('qt6')
@@ -46,11 +46,8 @@ subdir('scripts')
 custom_target('zz_toplevel_files',
     input: [
         '.clang-format',
-        '.clang-format.license',
         'AUTHORS',
-        'AUTHORS.license',
         'ChangeLog',
-        'ChangeLog.license',
         'README',
     ],
     output: 'nuffink',

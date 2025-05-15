@@ -47,13 +47,13 @@ class CategoryTreeItem
                               CategoryTreeItem *parentItem = nullptr);
 
     /// List of child nodes for this item
-    QVector<CategoryTreeItem *> oChildItems;
+    QVector<CategoryTreeItem *> _childItems;
 
     /// Data for each column
-    QVector<QVariant> oItemData;
+    QVector<QVariant> _itemData;
 
     /// Reference to the parent item - nullptr for root, or another
     /// CategoryTreeItem
     // TODO - parentItem should be const but there are complications with that
-    CategoryTreeItem *oParentItem;
+    CategoryTreeItem *_parentItem;
 };

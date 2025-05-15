@@ -1,5 +1,23 @@
 Changelog for vizzyix - a portage package browser
 
+vizzyix-0.6.0
+  - tidy up category names with more than one dash (the ones
+    created by crossdev)
+  - File|Load should work now, and the messages to say that
+    eix-update needs to be run now appear at the right time.
+  - in source code, applied a consistent naming schem for
+    private attributes, and also tried to get function defs
+    in same order as the header declarations and with public
+    names at start of the class.
+  - eix database popups now appear in centre of main window
+    rather than at random locations on desktop.
+  - spdx replace .license files with entries in toml file
+
+vizzyix-0.5.1
+  - clean up spdx headers, switch to toml for reuse
+  - syntax highlighting for ebuild listings
+  - extend search to packages only in pkgdb (not just eix)
+
 vizzyix-0.5.0
   - remembered the Changelog this time!
   - clean up the two bottom panes

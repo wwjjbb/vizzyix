@@ -19,7 +19,8 @@ class PackageReportModel : public QAbstractTableModel
   public:
     explicit PackageReportModel(QObject *parent = nullptr);
     QVariant data(const QModelIndex &index, int role) const override;
-    QVariant headerData(int section, Qt::Orientation orientation,
+    QVariant headerData(int section,
+                        Qt::Orientation orientation,
                         int role = Qt::DisplayRole) const override;
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     int columnCount(const QModelIndex &parent = QModelIndex()) const override;
@@ -27,10 +28,11 @@ class PackageReportModel : public QAbstractTableModel
     void startUpdate();
     void endUpdate();
     void addPackage(const std::string &catName,
-                    const eix_proto::Package &package, VersionMap &zombies);
+                    const eix_proto::Package &package,
+                    VersionMap &zombies);
     void clear();
     const PackageReportItem &packageItem(int n);
 
   private:
-    QVector<PackageReportItem> packages;
+    QVector<PackageReportItem> _packages;
 };

@@ -13,8 +13,6 @@ Dynamically linked to:
 
 Requires >=app-portage/eix-0.34.11 to be built with protobuf support, and for the "eix.proto" file from the eix source archive to be installed at /usr/share/eix.
 
-HtmlBuilder (https://github.com/SRombauts/HtmlBuilder) - A simple C++ header-only HTML 5 Generator library, using a Document Object Model (DOM). MIT Licence. Bundled with project for now.
-
 SOURCE
 
 Written in C++ (C++17).
@@ -38,4 +36,4 @@ There are some basic tests - these may be run from the Tools | Test menu in QtCr
 
 PORTAGE
 
-The eix and vizzyix ebuilds are in the scripts/ directory. These are intended to go in your overlay - rename to dd the required version numbers: the eix version should be the same as the current gentoo version number, and the vizzyix version should be one of the versions in github.
+The eix and vizzyix ebuilds are in the scripts/ directory. These are intended to go in your overlay - rename to add the required version numbers: the eix version should be the same as the current gentoo version number, and the vizzyix version should be one of the versions in github.

@@ -81,13 +81,13 @@ void TestCategoryTreeItem::test_appendChild()
 
     for (int cn = 0; cn < 10; ++cn) {
         CategoryTreeItem *child =
-            top->appendChild({QString("TEST_%1").arg(cn), 8, 9});
+            top->appendChild({QStringLiteral("TEST_%1").arg(cn), 8, 9});
         QCOMPARE(top->childCount(), cn + 1);
         QCOMPARE(child->parentItem(), top);
 
         for (int gcn = 0; gcn < 10; ++gcn) {
-            CategoryTreeItem *grandchild =
-                child->appendChild({QString("GC_%1").arg(gcn), gcn, gcn * 2});
+            CategoryTreeItem *grandchild = child->appendChild(
+                {QStringLiteral("GC_%1").arg(gcn), gcn, gcn * 2});
             QCOMPARE(child->childCount(), gcn + 1);
             QCOMPARE(grandchild->parentItem(), child);
         }
@@ -108,7 +108,7 @@ void TestCategoryTreeItem::test_freeChildItems()
     QCOMPARE(top->childCount(), 0);
 
     for (int n = 0; n < 10; ++n) {
-        (void)top->appendChild({QString("TEST_%1").arg(n), 8, 9});
+        (void)top->appendChild({QStringLiteral("TEST_%1").arg(n), 8, 9});
     }
 
     QCOMPARE(top->childCount(), 10);
@@ -161,7 +161,7 @@ void TestCategoryTreeItem::test_row()
     QCOMPARE(top->childCount(), 0);
 
     for (int n = 0; n < 10; ++n) {
-        (void)top->appendChild({QString("TEST_%1").arg(n), 8, 9});
+        (void)top->appendChild({QStringLiteral("TEST_%1").arg(n), 8, 9});
     }
     QCOMPARE(top->childCount(), 10);
 
@@ -222,19 +222,19 @@ void TestCategoryTreeItem::test_findChild()
 
     for (int n = 0; n < 10; ++n) {
         CategoryTreeItem *child =
-            top->appendChild({QString("TEST_%1").arg(n), 8, 9});
+            top->appendChild({QStringLiteral("TEST_%1").arg(n), 8, 9});
         QCOMPARE(top->childCount(), n + 1);
         QCOMPARE(child->parentItem(), top);
     }
 
     for (int n = 0; n < 10; ++n) {
-        QString name(QString("TEST_%1").arg(n));
+        QString name(QStringLiteral("TEST_%1").arg(n));
 
         CategoryTreeItem *found = top->findChild(name);
         QCOMPARE(found, top->child(n));
     }
 
-    CategoryTreeItem *nope = top->findChild(QString("Fred"));
+    CategoryTreeItem *nope = top->findChild(QStringLiteral("Fred"));
     QCOMPARE(nope, nullptr);
 
     delete top;

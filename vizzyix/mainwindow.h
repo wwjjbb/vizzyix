@@ -12,7 +12,6 @@
 #include <QStandardItemModel>
 #include <QString>
 
-#include "applicationdata.h"
 #include "detailsdialog.h"
 #include "htmlgenerator.h"
 
@@ -45,15 +44,34 @@ class MainWindow : public QMainWindow
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+  signals:
+    void loadPortageData();
+    void showEbuild(const QString &repository,
+                    const QString &category,
+                    const QString &package,
+                    const QString &version);
+
   private:
     void adjustCategoryTreeColumns();
     void adjustPackageTableColumns();
     void displayCategoryTree();
     void fixupLineClearButton(QLineEdit *lineEdit);
-
     void showPackageDetails(const PackageReportItem &item);
-
     bool isDataConsistent();
+
+  private slots:
+    void aboutVizzyix();
+    void onEixRunning(bool running);
+    void onCategorySelected(const QItemSelection &selected,
+                            const QItemSelection &deselected);
+    void onPackageSelected(const QItemSelection &selected,
+                           const QItemSelection &deselected);
+    void onSelectAll();
+    void onSelectInstalled();
+    void onSelectWorld();
+    void onSearchText();
+    void onClickedVersion(const QModelIndex &index);
+    void aboutQt();
 
   private:
     /// The gui from designer
@@ -64,46 +82,21 @@ class MainWindow : public QMainWindow
      * This is created at start and subsequently hidden or shown. The
      * dialog is owned by this window so do not explicitly delete it.
      */
-    DetailsDialog *oDetailsDialog;
+    DetailsDialog *_detailsDialog;
 
     /*!
      * Data model for the package list table view. Using a sort filter to
      * make it easy to sort the columms by their values.
      */
-    QSortFilterProxyModel oPackageProxyModel;
+    QSortFilterProxyModel _packageProxyModel;
 
     /// Builds the content of the summary section
-    HtmlGenerator oHtmlDescription;
+    HtmlGenerator _htmlDescription;
 
     /// Data model for the package version table view
-    QStandardItemModel oDetailsModel;
+    QStandardItemModel _detailsModel;
 
     /// Keep a reference to the search filter box. Needed because it gets
     /// accessed throughout.
-    QLineEdit *oSearchBox = nullptr;
-
-  signals:
-    void loadPortageData();
-    void showEbuild(const QString &repository,
-                    const QString &category,
-                    const QString &package,
-                    const QString &version);
-
-  private slots:
-    void aboutVizzyix();
-    void onReady();
-    void onEixRunning(bool running);
-    void onCategorySelected(const QItemSelection &selected,
-                            const QItemSelection &deselected);
-    void onPackageSelected(const QItemSelection &selected,
-                           const QItemSelection &deselected);
-
-    void onSelectAll();
-    void onSelectInstalled();
-    void onSelectWorld();
-    void onSearchText();
-
-    void onClickedVersion(const QModelIndex &index);
-
-    void aboutQt();
+    QLineEdit *_searchBox = nullptr;
 };

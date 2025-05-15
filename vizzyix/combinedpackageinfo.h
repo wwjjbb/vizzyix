@@ -26,8 +26,8 @@ class CombinedPackageInfo
     void setVersionDir(QDir dir);
 
   private:
-    QString oVersionName;
-    QDir oVersionDir;
-    bool oInEixDb;
-    bool oInPkgDb;
+    QString _versionName;
+    QDir _versionDir;
+    bool _inEixDb;
+    bool _inPkgDb;
 };

@@ -155,13 +155,13 @@ void TestReportModelItem::test_data_member()
         something
             .data(PackageReportItem::Column::InstalledVersion, Qt::DisplayRole)
             .toString(),
-        QString("(~)4.12.3"));
+        QStringLiteral("(~)4.12.3"));
 
     QCOMPARE(
         something
             .data(PackageReportItem::Column::AvailableVersion, Qt::DisplayRole)
             .toString(),
-        QString("~4.12.3"));
+        QStringLiteral("~4.12.3"));
 
     QCOMPARE(something.data(PackageReportItem::Description, Qt::DisplayRole)
                  .toString()
@@ -189,13 +189,13 @@ void TestReportModelItem::test_data_member_with_999()
         something
             .data(PackageReportItem::Column::InstalledVersion, Qt::DisplayRole)
             .toString(),
-        QString(""));
+        QStringLiteral(""));
 
     QCOMPARE(
         something
             .data(PackageReportItem::Column::AvailableVersion, Qt::DisplayRole)
             .toString(),
-        QString("39.0-r2"));
+        QStringLiteral("39.0-r2"));
 
     QCOMPARE(something.data(PackageReportItem::Description, Qt::DisplayRole)
                  .toString()
@@ -222,13 +222,13 @@ void TestReportModelItem::test_data_member_only_999()
         something
             .data(PackageReportItem::Column::InstalledVersion, Qt::DisplayRole)
             .toString(),
-        QString(""));
+        QStringLiteral(""));
 
     QCOMPARE(
         something
             .data(PackageReportItem::Column::AvailableVersion, Qt::DisplayRole)
             .toString(),
-        QString("~9999"));
+        QStringLiteral("~9999"));
 
     QCOMPARE(something.data(PackageReportItem::Description, Qt::DisplayRole)
                  .toString()

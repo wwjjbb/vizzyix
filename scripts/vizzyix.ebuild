@@ -1,4 +1,4 @@
-# Copyright 1999-2024 Gentoo Authors
+# Copyright 1999-2025 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -18,21 +18,11 @@ RESTRICT="mirror"
 
 DEPEND="app-portage/eix:=[protobuf]
 		dev-cpp/abseil-cpp
-		dev-libs/log4cxx
 		dev-libs/protobuf:=
-		dev-qt/qtcore
-		dev-qt/qtgui
-		dev-qt/qtsvg
-		dev-qt/qtwidgets"
+		dev-qt/qtbase:6[gui,widgets]
+		dev-qt/qtsvg:6"
 
-RDEPEND="app-portage/eix:=[protobuf]
-		 dev-cpp/abseil-cpp
-		 dev-libs/log4cxx
-		 dev-libs/protobuf:=
-		 dev-qt/qtcore
-		 dev-qt/qtgui
-		 dev-qt/qtsvg
-		 dev-qt/qtwidgets"
+RDEPEND="${DEPEND}"
 
 BDEPEND="app-portage/eix:=[protobuf]
 		 dev-libs/protobuf:=

@@ -16,7 +16,7 @@ QVariant PackageReportModel::data(const QModelIndex &idx, int role) const
         return QVariant();
 
     if (idx.row() < rowCount() && idx.column() < columnCount()) {
-        return packages[idx.row()].data(idx.column(), role);
+        return _packages[idx.row()].data(idx.column(), role);
     }
 
     return QVariant();
@@ -63,7 +63,7 @@ QVariant PackageReportModel::headerData(int section,
 
 int PackageReportModel::rowCount(const QModelIndex &idx) const
 {
-    return idx.isValid() ? 0 : packages.size();
+    return idx.isValid() ? 0 : _packages.size();
 }
 
 int PackageReportModel::columnCount(const QModelIndex &idx) const
@@ -85,15 +85,15 @@ void PackageReportModel::addPackage(const std::string &catName,
                                     const eix_proto::Package &package,
                                     VersionMap &zombies)
 {
-    packages.append(PackageReportItem(catName, package, zombies));
+    _packages.append(PackageReportItem(catName, package, zombies));
 }
 
 void PackageReportModel::clear()
 {
-    packages.clear();
+    _packages.clear();
 }
 
 const PackageReportItem &PackageReportModel::packageItem(int n)
 {
-    return packages[n];
+    return _packages[n];
 }

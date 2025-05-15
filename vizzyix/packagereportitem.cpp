@@ -13,41 +13,41 @@
 
 #include "eix.pb.h"
 
-const QVector<Qt::ItemDataRole> PackageReportItem::oRole({Qt::DecorationRole,
+const QVector<Qt::ItemDataRole> PackageReportItem::_role({Qt::DecorationRole,
                                                           Qt::DisplayRole,
                                                           Qt::DisplayRole,
                                                           Qt::DisplayRole,
                                                           Qt::DisplayRole});
 
-QVariant PackageReportItem::oBoldFont;
+QVariant PackageReportItem::_boldFont;
 
 int PackageReportItem::columnCount()
 {
-    return oRole.length();
+    return _role.length();
 }
 
 QVariant &PackageReportItem::boldFont()
 {
-    return oBoldFont;
+    return _boldFont;
 }
 
 void PackageReportItem::setBoldFont(QFont font)
 {
-    oBoldFont = QVariant(font);
+    _boldFont = QVariant(font);
 }
 
 PackageReportItem::PackageReportItem(const std::string &catName,
                                      const eix_proto::Package &pkg,
                                      VersionMap &zombies)
-    : oPackageDetails(&pkg), oCatName(catName), oZombieVersions(zombies)
+    : _packageDetails(&pkg), _catName(catName), _zombieVersions(zombies)
 {
     cacheValues();
 }
 
 PackageReportItem::PackageReportItem(const PackageReportItem &item)
-    : oPackageDetails(item.oPackageDetails), oCatName(item.oCatName),
-      oInstallType(item.oInstallType), oIsInstalled(item.oIsInstalled),
-      oVersions(item.oVersions), oZombieVersions(item.oZombieVersions)
+    : _packageDetails(item._packageDetails), _catName(item._catName),
+      _installType(item._installType), _isInstalled(item._isInstalled),
+      _versions(item._versions), _zombieVersions(item._zombieVersions)
 {
 }
 
@@ -61,12 +61,12 @@ void swap(PackageReportItem &first, PackageReportItem &second)
 {
     using std::swap;
 
-    swap(first.oPackageDetails, second.oPackageDetails);
-    swap(first.oCatName, second.oCatName);
-    swap(first.oInstallType, second.oInstallType);
-    swap(first.oIsInstalled, second.oIsInstalled);
-    first.oVersions.swap(second.oVersions);
-    first.oZombieVersions.swap(second.oZombieVersions);
+    swap(first._packageDetails, second._packageDetails);
+    swap(first._catName, second._catName);
+    swap(first._installType, second._installType);
+    swap(first._isInstalled, second._isInstalled);
+    first._versions.swap(second._versions);
+    first._zombieVersions.swap(second._zombieVersions);
 }
 
 QVariant PackageReportItem::data(int colNumber, int role) const
@@ -111,7 +111,7 @@ QVariant PackageReportItem::data(int colNumber, int role) const
             QString::fromStdString(packageDetails().name()));
 
     case Column::InstalledVersion:
-        return QVariant::fromValue(oVersions.join(", "));
+        return QVariant::fromValue(_versions.join(", "));
 
     case Column::AvailableVersion:
         return QVariant::fromValue(highestVersionName());
@@ -127,12 +127,12 @@ QVariant PackageReportItem::data(int colNumber, int role) const
 
 Qt::ItemDataRole PackageReportItem::dataRole(int colNumber) const
 {
-    return oRole[colNumber];
+    return _role[colNumber];
 }
 
 std::string PackageReportItem::category() const
 {
-    return oCatName;
+    return _catName;
 }
 
 std::string PackageReportItem::name() const
@@ -147,24 +147,24 @@ std::string PackageReportItem::description() const
 
 eix_proto::MaskFlags_MaskFlag PackageReportItem::installType() const
 {
-    return oInstallType;
+    return _installType;
 }
 
 bool PackageReportItem::installed() const
 {
-    return oIsInstalled;
+    return _isInstalled;
 }
 
 QStringList PackageReportItem::versionNames() const
 {
-    if (!oZombieVersions.empty()) {
-        QStringList result(oVersions);
-        foreach (QString ver, oZombieVersions.keys()) {
+    if (!_zombieVersions.empty()) {
+        QStringList result(_versions);
+        foreach (QString ver, _zombieVersions.keys()) {
             result.append(ver + "**");
         }
         return result;
     }
-    return oVersions;
+    return _versions;
 }
 
 QString PackageReportItem::highestVersionName() const
@@ -182,7 +182,7 @@ QString PackageReportItem::highestVersionName() const
                 foundVersion = "~" + foundVersion;
             }
             // For checking the tests
-            // foundVersion = QString("%1-(%2/%3)")
+            // foundVersion = QStringLiteral("%1-(%2/%3)")
             //                   .arg(foundVersion)
             //                   .arg(versionIndex)
             //                   .arg(packageDetails().version_size());
@@ -230,18 +230,18 @@ void PackageReportItem::cacheValues()
             // TODO : could remember the version indexes, handy later
             QString outVersion(QString::fromStdString(ver.id()));
             if (!EixProtoHelper::isStable(ver)) {
-                outVersion = QString("(~)%1").arg(outVersion);
+                outVersion = QStringLiteral("(~)%1").arg(outVersion);
             }
-            oVersions.append(outVersion);
+            _versions.append(outVersion);
         }
     }
 
-    oIsInstalled = resultInstalled;   // i.e. are any versions installed
-    oInstallType = resultInstallType; // for the 'highest' version installed
+    _isInstalled = resultInstalled;   // i.e. are any versions installed
+    _installType = resultInstallType; // for the 'highest' version installed
                                       // (TODO: return a list?)
 }
 
 const eix_proto::Package &PackageReportItem::packageDetails() const
 {
-    return *oPackageDetails;
+    return *_packageDetails;
 }

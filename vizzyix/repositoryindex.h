@@ -18,14 +18,12 @@ class RepositoryIndex
     RepositoryIndex();
 
     bool load();
-    QString mainRepo() const;
-    QStringList repoList() const;
-    QString find(const QString &repo) const;
+    QString find(const QString &name) const;
 
   private:
     /// The key is repository name, & value is full path to repository directory
-    QMap<QString, QString> repoMap_;
+    QMap<QString, QString> _repositoryMap;
 
     /// The name of the default repository
-    QString mainRepo_;
+    QString _mainRepository;
 };

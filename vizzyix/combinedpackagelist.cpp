@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 #include "combinedpackagelist.h"
-#include "applicationdata.h"
 #include "combinedpackageinfo.h"
 
 #include <QDebug>
@@ -14,7 +13,7 @@
 
 /// Constructor just saves the package directory
 CombinedPackageList::CombinedPackageList(const QString &pkgDir)
-    : oPkgDirectory(pkgDir)
+    : _pkgDirectory(pkgDir)
 {
 }
 
@@ -25,12 +24,11 @@ CombinedPackageList::CombinedPackageList(const QString &pkgDir)
  * called zombies here.
  */
 void CombinedPackageList::load(const eix_proto::Collection &eix,
-                               bool filters,
                                const QString &searchText)
 {
     clear();
     readEixData(eix);
-    readPortagePackageDatabase(filters, searchText);
+    readPortagePackageDatabase(searchText);
     identifyZombies();
 }
 
@@ -41,7 +39,7 @@ void CombinedPackageList::load(const eix_proto::Collection &eix,
 bool CombinedPackageList::isZombie(const std::string &categoryName,
                                    const std::string &packageName) const
 {
-    return oZombies.contains(
+    return _zombies.contains(
         CategoryPackageName(QString::fromStdString(categoryName),
                             QString::fromStdString(packageName)));
 }
@@ -57,9 +55,9 @@ VersionMap CombinedPackageList::zombieVersions(const std::string &categoryName,
                                QString::fromStdString(packageName));
     VersionMap result;
 
-    auto lookup = oZombies.find(target);
-    if (lookup != oZombies.end()) {
-        return oPackages[target];
+    auto lookup = _zombies.find(target);
+    if (lookup != _zombies.end()) {
+        return _packages[target];
     }
     return result;
 }
@@ -68,7 +66,7 @@ VersionMap CombinedPackageList::zombieVersions(const std::string &categoryName,
 QStringList CombinedPackageList::zombieList() const
 {
     QStringList result;
-    foreach (auto pair, oZombies.values()) {
+    foreach (auto pair, _zombies.values()) {
         result.append(pair.first + "/" + pair.second);
     }
     return result;
@@ -77,8 +75,8 @@ QStringList CombinedPackageList::zombieList() const
 /// Empties the lists of packages and zombies
 void CombinedPackageList::clear()
 {
-    oPackages.clear();
-    oZombies.clear();
+    _packages.clear();
+    _zombies.clear();
 }
 
 /*!
@@ -110,8 +108,7 @@ void CombinedPackageList::readEixData(const eix_proto::Collection &eix)
                     addVersion(categoryName,
                                packageName,
                                QString::fromStdString(ver.id()),
-                               DataOrigin::EixData,
-                               MergeMode::MergeAdd);
+                               DataOrigin::EixData);
                 }
 
                 // See what we have
@@ -160,11 +157,10 @@ void CombinedPackageList::readEixData(const eix_proto::Collection &eix)
  *      - if a cat/pack has been removed from portage, it's zombie will be
  *        ignored.
  */
-void CombinedPackageList::readPortagePackageDatabase(bool filtered,
-                                                     const QString &searchText)
+void CombinedPackageList::readPortagePackageDatabase(const QString &searchText)
 {
     foreach (const auto categoryInfo,
-             oPkgDirectory.entryInfoList(QDir::NoDotAndDotDot | QDir::Dirs)) {
+             _pkgDirectory.entryInfoList(QDir::NoDotAndDotDot | QDir::Dirs)) {
 
         // e.g. /var/db/pkg/dev-qt
 
@@ -208,7 +204,6 @@ void CombinedPackageList::readPortagePackageDatabase(bool filtered,
                                packageName,
                                packageVersion,
                                DataOrigin::PkgData,
-                               MergeMode::MergeAdd,
                                packageInfo.absoluteFilePath());
                 }
             }
@@ -241,15 +236,15 @@ void CombinedPackageList::readPortagePackageDatabase(bool filtered,
  */
 void CombinedPackageList::identifyZombies()
 {
-    oZombies.clear();
+    _zombies.clear();
 
-    foreach (auto &packageKey, oPackages.keys()) {
-        auto versionList = oPackages[packageKey];
+    foreach (auto &packageKey, _packages.keys()) {
+        auto versionList = _packages[packageKey];
 
         foreach (auto versionName, versionList.keys()) {
             auto versionItem = versionList[versionName];
             if (versionItem.inPkgDb() && !versionItem.inEixDb()) {
-                oZombies.insert(packageKey);
+                _zombies.insert(packageKey);
             }
         }
     }
@@ -263,19 +258,13 @@ void CombinedPackageList::addVersion(const QString &categoryName,
                                      const QString &packageName,
                                      const QString &versionName,
                                      CombinedPackageList::DataOrigin origin,
-                                     MergeMode mode,
                                      const QString &packagePath)
 {
     auto key = QPair<QString, QString>(categoryName, packageName);
 
-    auto catpkg = oPackages.find(key);
-    if (catpkg == oPackages.end()) {
-        if (mode == MergeMode::MergeOnly) {
-            // Do not add new entries when only merging is allowed
-            // TODO - should apply filter rather than do this
-            return;
-        }
-        catpkg = oPackages.insert(key, VersionMap());
+    auto catpkg = _packages.find(key);
+    if (catpkg == _packages.end()) {
+        catpkg = _packages.insert(key, VersionMap());
     }
     auto &versionList = catpkg.value();
 

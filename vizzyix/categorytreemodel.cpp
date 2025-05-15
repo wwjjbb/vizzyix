@@ -14,10 +14,10 @@ CategoryTreeModel::CategoryTreeModel(QObject *)
     // The tree model always contains the root node (headers), and a child of
     // this which is the visible root of all the categories.
 
-    oRootItem = CategoryTreeItem::newRootItem(
+    _rootItem = CategoryTreeItem::newRootItem(
         {tr("Categories"), tr("Pkgs"), tr("Idx")});
 
-    oAllItem = oRootItem->appendChild({tr("All"), 0, -1});
+    _allItem = _rootItem->appendChild({tr("All"), 0, -1});
 }
 
 /*!
@@ -25,7 +25,7 @@ CategoryTreeModel::CategoryTreeModel(QObject *)
  */
 CategoryTreeModel::~CategoryTreeModel()
 {
-    delete oRootItem;
+    delete _rootItem;
 }
 
 /*!
@@ -62,7 +62,7 @@ QVariant CategoryTreeModel::headerData(int section,
 {
     if (orientation == Qt::Horizontal && role == Qt::DisplayRole &&
         section >= 0 && section < columnCount()) {
-        return oRootItem->data(section);
+        return _rootItem->data(section);
     }
 
     return QVariant();
@@ -83,7 +83,7 @@ CategoryTreeModel::index(int row, int column, const QModelIndex &parent) const
     const CategoryTreeItem *parentItem;
 
     if (!parent.isValid())
-        parentItem = oRootItem;
+        parentItem = _rootItem;
     else
         parentItem = static_cast<CategoryTreeItem *>(parent.internalPointer());
 
@@ -104,7 +104,7 @@ QModelIndex CategoryTreeModel::parent(const QModelIndex &index) const
         static_cast<CategoryTreeItem *>(index.internalPointer());
     CategoryTreeItem *parentItem = childItem->parentItem();
 
-    if (parentItem == oRootItem)
+    if (parentItem == _rootItem)
         return QModelIndex();
 
     return createIndex(parentItem->row(), 0, parentItem);
@@ -118,7 +118,7 @@ int CategoryTreeModel::rowCount(const QModelIndex &parent) const
         return 0;
 
     if (!parent.isValid())
-        parentItem = oRootItem;
+        parentItem = _rootItem;
     else
         parentItem = static_cast<CategoryTreeItem *>(parent.internalPointer());
 
@@ -132,7 +132,7 @@ int CategoryTreeModel::columnCount(const QModelIndex &parent) const
         return static_cast<CategoryTreeItem *>(parent.internalPointer())
             ->columnCount();
 
-    return oRootItem->columnCount();
+    return _rootItem->columnCount();
 }
 
 /// Detach model while updating contents
@@ -176,23 +176,27 @@ void CategoryTreeModel::addCategory(const uint categoryIndex,
         qWarning() << "(addCategory) category name starts with dash:"
                    << categoryName;
 
-    if (part2.indexOf('-') >= 0)
+    if (part2.indexOf('-') >= 0) {
         qWarning() << "(addCategory) category name contains 2+ dashes:"
                    << categoryName;
+        while (part2.size() > 1 && part2.first(1) == QStringLiteral("-")) {
+            part2 = part2.removeFirst();
+        }
+    }
 
     if (!splitName) {
         QVector<QVariant> node;
         node << part1 << QVariant::fromValue(categorySize)
              << QVariant::fromValue(categoryIndex);
 
-        (void)oAllItem->appendChild(node);
+        (void)_allItem->appendChild(node);
     } else {
-        CategoryTreeItem *top = oAllItem->findChild(part1);
+        CategoryTreeItem *top = _allItem->findChild(part1);
         if (!top) {
             QVector<QVariant> topNode;
             topNode << part1 << 0 << -1;
 
-            top = oAllItem->appendChild(topNode);
+            top = _allItem->appendChild(topNode);
         }
 
         QVector<QVariant> node;
@@ -202,17 +206,17 @@ void CategoryTreeModel::addCategory(const uint categoryIndex,
         (void)top->appendChild(node);
         top->setPackageCount(top->packageCount() + categorySize);
     }
-    oAllItem->setPackageCount(oAllItem->packageCount() + categorySize);
+    _allItem->setPackageCount(_allItem->packageCount() + categorySize);
 }
 
 /// Clear the tree data - leave the root item (headers) and the "All" item
 void CategoryTreeModel::clear()
 {
-    oAllItem->freeChildItems();
-    oAllItem->setData(CategoryTreeItem::Column::PkgCount, 0);
+    _allItem->freeChildItems();
+    _allItem->setData(CategoryTreeItem::Column::PkgCount, 0);
 }
 
 const CategoryTreeItem *CategoryTreeModel::allItem() const
 {
-    return oAllItem;
+    return _allItem;
 }

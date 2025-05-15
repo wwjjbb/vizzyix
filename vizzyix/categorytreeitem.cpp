@@ -20,7 +20,7 @@
  */
 CategoryTreeItem::CategoryTreeItem(const QVector<QVariant> &data,
                                    CategoryTreeItem *parentItem)
-    : oItemData(data), oParentItem(parentItem)
+    : _itemData(data), _parentItem(parentItem)
 {
 }
 
@@ -57,8 +57,8 @@ CategoryTreeItem::~CategoryTreeItem()
  * each of it's children.
  */
 CategoryTreeItem::CategoryTreeItem(const CategoryTreeItem &other)
-    : oChildItems(other.oChildItems), oItemData(other.oItemData),
-      oParentItem(other.oParentItem)
+    : _childItems(other._childItems), _itemData(other._itemData),
+      _parentItem(other._parentItem)
 {
 }
 
@@ -98,7 +98,7 @@ CategoryTreeItem &CategoryTreeItem::operator=(CategoryTreeItem &)
 CategoryTreeItem *CategoryTreeItem::appendChild(const QVector<QVariant> &data)
 {
     auto newChild = new CategoryTreeItem(data, this);
-    oChildItems.append(newChild);
+    _childItems.append(newChild);
     return newChild;
 }
 
@@ -108,8 +108,8 @@ CategoryTreeItem *CategoryTreeItem::appendChild(const QVector<QVariant> &data)
  */
 void CategoryTreeItem::freeChildItems()
 {
-    qDeleteAll(oChildItems);
-    oChildItems.clear();
+    qDeleteAll(_childItems);
+    _childItems.clear();
 }
 
 /*!
@@ -126,10 +126,10 @@ void CategoryTreeItem::freeChildItems()
  */
 CategoryTreeItem *CategoryTreeItem::child(int row) const
 {
-    if (row < 0 || row >= oChildItems.count())
+    if (row < 0 || row >= _childItems.count())
         return nullptr;
 
-    return oChildItems.at(row);
+    return _childItems.at(row);
 }
 
 /*!
@@ -142,7 +142,7 @@ CategoryTreeItem *CategoryTreeItem::child(int row) const
  */
 int CategoryTreeItem::childCount() const
 {
-    return oChildItems.count();
+    return _childItems.count();
 }
 
 /*!
@@ -154,7 +154,7 @@ int CategoryTreeItem::childCount() const
  */
 int CategoryTreeItem::columnCount() const
 {
-    return oItemData.count();
+    return _itemData.count();
 }
 
 /*!
@@ -170,9 +170,9 @@ int CategoryTreeItem::columnCount() const
  */
 QVariant CategoryTreeItem::data(int column) const
 {
-    if (column < 0 || column >= oItemData.size())
+    if (column < 0 || column >= _itemData.size())
         return QVariant();
-    return oItemData.at(column);
+    return _itemData.at(column);
 }
 
 /*!
@@ -187,8 +187,8 @@ QVariant CategoryTreeItem::data(int column) const
  */
 void CategoryTreeItem::setData(int column, const QVariant value)
 {
-    if (column >= 0 && column < oItemData.size()) {
-        oItemData[column] = value;
+    if (column >= 0 && column < _itemData.size()) {
+        _itemData[column] = value;
     }
 }
 
@@ -201,8 +201,8 @@ void CategoryTreeItem::setData(int column, const QVariant value)
  */
 int CategoryTreeItem::row() const
 {
-    if (oParentItem)
-        return oParentItem->oChildItems.indexOf(
+    if (_parentItem)
+        return _parentItem->_childItems.indexOf(
             const_cast<CategoryTreeItem *>(this));
 
     return 0;
@@ -218,7 +218,7 @@ int CategoryTreeItem::row() const
  */
 CategoryTreeItem *CategoryTreeItem::parentItem() const
 {
-    return oParentItem;
+    return _parentItem;
 }
 
 /// Returns the number of packages owned by this item

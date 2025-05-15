@@ -12,8 +12,8 @@ EbuildSyntaxHighlighter::EbuildSyntaxHighlighter(QTextDocument *parent)
 
 #define BX "\\b"
 
-    keywordFormat.setForeground(Qt::darkBlue);
-    keywordFormat.setFontWeight(QFont::Bold);
+    _keywordFormat.setForeground(Qt::darkBlue);
+    _keywordFormat.setFontWeight(QFont::Bold);
     const QString keywordPatterns[] = {
         QStringLiteral(BX "case" BX),     QStringLiteral(BX "coproc" BX),
         QStringLiteral(BX "do" BX),       QStringLiteral(BX "done" BX),
@@ -28,49 +28,51 @@ EbuildSyntaxHighlighter::EbuildSyntaxHighlighter(QTextDocument *parent)
     };
     for (const QString &pattern : keywordPatterns) {
         rule.pattern = QRegularExpression(pattern);
-        rule.format = keywordFormat;
-        highlightingRules.append(rule);
+        rule.format = _keywordFormat;
+        _highlightingRules.append(rule);
     }
 
-    punctuationFormat.setForeground(Qt::black);
-    punctuationFormat.setFontWeight(QFont::Bold);
+    _punctuationFormat.setForeground(Qt::black);
+    _punctuationFormat.setFontWeight(QFont::Bold);
     const QString punctuationPatterns[] = {
-                                           QStringLiteral(">="),
-                                           QStringLiteral("<="),
-                                           QStringLiteral(">"),
-                                           QStringLiteral("<"),
-                                           QStringLiteral("="),
-                                           QStringLiteral("{"),
-                                           QStringLiteral("}"),
-                                           QStringLiteral("\\[\\["),
-                                           QStringLiteral("\\]\\]"),
-                                           QStringLiteral("!"),
-                                           };
+        QStringLiteral(">="),
+        QStringLiteral("<="),
+        QStringLiteral(">"),
+        QStringLiteral("<"),
+        QStringLiteral("="),
+        QStringLiteral("{"),
+        QStringLiteral("}"),
+        QStringLiteral("\\[\\["),
+        QStringLiteral("\\]\\]"),
+        QStringLiteral("!"),
+    };
     for (const QString &pattern : punctuationPatterns) {
         rule.pattern = QRegularExpression(pattern);
-        rule.format = punctuationFormat;
-        highlightingRules.append(rule);
+        rule.format = _punctuationFormat;
+        _highlightingRules.append(rule);
     }
 
-    commentFormat.setForeground(Qt::darkGray);
+    _commentFormat.setForeground(Qt::darkGray);
     rule.pattern = QRegularExpression("#.*");
-    rule.format = commentFormat;
-    highlightingRules.append(rule);
+    rule.format = _commentFormat;
+    _highlightingRules.append(rule);
 
     // Handles embedded \"
-    // Anything enclosed in ".....", (anything not dquotes or slash) or (slash+anything)
-    stringFormat.setForeground(Qt::darkGreen);
-    rule.pattern = QRegularExpression(QStringLiteral("\"(?:[^\"\\\\]|\\\\.)*\""));
-    rule.format = stringFormat;
-    highlightingRules.append(rule);
+    // Anything enclosed in ".....", (anything not dquotes or slash) or
+    // (slash+anything)
+    _stringFormat.setForeground(Qt::darkGreen);
+    rule.pattern =
+        QRegularExpression(QStringLiteral("\"(?:[^\"\\\\]|\\\\.)*\""));
+    rule.format = _stringFormat;
+    _highlightingRules.append(rule);
 
-    functionFormat.setForeground(Qt::darkRed);
+    _functionFormat.setForeground(Qt::darkRed);
     rule.pattern = QRegularExpression("^\\s*\\w+\\(\\)");
-    rule.format = functionFormat;
-    highlightingRules.append(rule);
+    rule.format = _functionFormat;
+    _highlightingRules.append(rule);
 
-    varFormat.setForeground(Qt::darkMagenta);
-    varFormat.setFontWeight(QFont::Bold);
+    _varFormat.setForeground(Qt::darkMagenta);
+    _varFormat.setFontWeight(QFont::Bold);
     const QString varPatterns[] = {
         QStringLiteral("^\\s*\\w+="),
         QStringLiteral("^\\s*\\w+\\+="),
@@ -78,8 +80,8 @@ EbuildSyntaxHighlighter::EbuildSyntaxHighlighter(QTextDocument *parent)
     };
     for (const QString &pattern : varPatterns) {
         rule.pattern = QRegularExpression(pattern);
-        rule.format = varFormat;
-        highlightingRules.append(rule);
+        rule.format = _varFormat;
+        _highlightingRules.append(rule);
     }
 
     // TODO Highlight variables
@@ -89,15 +91,15 @@ EbuildSyntaxHighlighter::EbuildSyntaxHighlighter(QTextDocument *parent)
     // Theres an example for multi-line comments
     // Need a way to insert into the rules list, so can get correct priority
     // Cases:
-    //   BS0: ....."....\"....".... -> BS0 (string on a line, handled by a normal rule)
-    //   BS0: ....."....\"........$ -> BS1 (highlight from " to eoln)
-    //   BS1: ..........\"........$ -> BS1 (highlight entire line)
-    //   BS1: ..........\"..."....$ -> BS0 (highlight start line to ")
+    //   BS0: ....."....\"....".... -> BS0 (string on a line, handled by a
+    //   normal rule) BS0: ....."....\"........$ -> BS1 (highlight from " to
+    //   eoln) BS1: ..........\"........$ -> BS1 (highlight entire line) BS1:
+    //   ..........\"..."....$ -> BS0 (highlight start line to ")
 }
 
 void EbuildSyntaxHighlighter::highlightBlock(const QString &text)
 {
-    for (const HighlightingRule &rule : std::as_const(highlightingRules)) {
+    for (const HighlightingRule &rule : std::as_const(_highlightingRules)) {
         QRegularExpressionMatchIterator matchIterator =
             rule.pattern.globalMatch(text);
         while (matchIterator.hasNext()) {

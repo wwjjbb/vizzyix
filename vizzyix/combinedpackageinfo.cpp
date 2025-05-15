@@ -11,14 +11,14 @@ CombinedPackageInfo::CombinedPackageInfo()
 
 CombinedPackageInfo::CombinedPackageInfo(const QString &versionName,
                                          const QDir &versionDir)
-    : oVersionName(versionName), oVersionDir(versionDir), oInEixDb(false),
-      oInPkgDb(false)
+    : _versionName(versionName), _versionDir(versionDir), _inEixDb(false),
+      _inPkgDb(false)
 {
 }
 
 CombinedPackageInfo::CombinedPackageInfo(const CombinedPackageInfo &item)
-    : oVersionName(item.oVersionName), oVersionDir(item.oVersionDir),
-      oInEixDb(item.oInEixDb), oInPkgDb(item.oInPkgDb)
+    : _versionName(item._versionName), _versionDir(item._versionDir),
+      _inEixDb(item._inEixDb), _inPkgDb(item._inPkgDb)
 {
 }
 
@@ -32,43 +32,43 @@ void swap(CombinedPackageInfo &first, CombinedPackageInfo &second)
 {
     using std::swap;
 
-    swap(first.oVersionName, second.oVersionName);
-    swap(first.oVersionDir, second.oVersionDir);
-    swap(first.oInEixDb, second.oInEixDb);
-    swap(first.oInPkgDb, second.oInPkgDb);
+    swap(first._versionName, second._versionName);
+    swap(first._versionDir, second._versionDir);
+    swap(first._inEixDb, second._inEixDb);
+    swap(first._inPkgDb, second._inPkgDb);
 }
 
 const QString &CombinedPackageInfo::versionName() const
 {
-    return oVersionName;
+    return _versionName;
 }
 
 const QDir &CombinedPackageInfo::versionDir() const
 {
-    return oVersionDir;
+    return _versionDir;
 }
 
 bool CombinedPackageInfo::inEixDb() const
 {
-    return oInEixDb;
+    return _inEixDb;
 }
 
 bool CombinedPackageInfo::inPkgDb() const
 {
-    return oInPkgDb;
+    return _inPkgDb;
 }
 
 void CombinedPackageInfo::setEixDb(bool state)
 {
-    oInEixDb = state;
+    _inEixDb = state;
 }
 
 void CombinedPackageInfo::setPkgDb(bool state)
 {
-    oInPkgDb = state;
+    _inPkgDb = state;
 }
 
 void CombinedPackageInfo::setVersionDir(QDir dir)
 {
-    oVersionDir = dir;
+    _versionDir = dir;
 }

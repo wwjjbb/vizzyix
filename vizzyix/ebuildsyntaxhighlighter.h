@@ -18,11 +18,11 @@ class EbuildSyntaxHighlighter : public QSyntaxHighlighter
         QTextCharFormat format;
     };
 
-    QList<HighlightingRule> highlightingRules;
-    QTextCharFormat keywordFormat;
-    QTextCharFormat varFormat;
-    QTextCharFormat stringFormat;
-    QTextCharFormat commentFormat;
-    QTextCharFormat functionFormat;
-    QTextCharFormat punctuationFormat;
+    QList<HighlightingRule> _highlightingRules;
+    QTextCharFormat _keywordFormat;
+    QTextCharFormat _varFormat;
+    QTextCharFormat _stringFormat;
+    QTextCharFormat _commentFormat;
+    QTextCharFormat _functionFormat;
+    QTextCharFormat _punctuationFormat;
 };

@@ -10,7 +10,7 @@
 #include <fstream>
 #include <iostream>
 
-std::unique_ptr<ApplicationData> ApplicationData::oAppData;
+std::unique_ptr<ApplicationData> ApplicationData::_appData;
 
 /*!
  * Constructor doesn't need to do anything
@@ -25,40 +25,40 @@ ApplicationData::ApplicationData()
  */
 ApplicationData *ApplicationData::data()
 {
-    if (!oAppData) {
-        oAppData.reset(new ApplicationData());
+    if (!_appData) {
+        _appData.reset(new ApplicationData());
     }
-    return oAppData.get();
+    return _appData.get();
 }
 
 /// Whether any filters are currently set
 bool ApplicationData::filters()
 {
-    return selectionFilter() || !search().isEmpty();
+    return (selectionFilter() != SelectionFilter::All) || !search().isEmpty();
 }
 
 /// Sets the selection filter to the given value.
 void ApplicationData::setSelectionFilter(SelectionFilter filter)
 {
-    oSelectionFilter = filter;
+    _selectionFilter = filter;
 }
 
 /// Gets the current selection filter value.
 ApplicationData::SelectionFilter ApplicationData::selectionFilter()
 {
-    return oSelectionFilter;
+    return _selectionFilter;
 }
 
 /// Sets the search filter to the given string.
 void ApplicationData::setSearch(const QString &search)
 {
-    oSearch = search;
+    _search = search;
 }
 
 /// Returns the current search filter.
 const QString ApplicationData::search()
 {
-    return oSearch;
+    return _search;
 }
 
 /*!
@@ -68,7 +68,7 @@ const QString ApplicationData::search()
  */
 void ApplicationData::parseEixData()
 {
-    std::fstream input(eixOutput->fileName().toStdString(),
+    std::fstream input(_eixOutput->fileName().toStdString(),
                        std::ios::in | std::ios::binary);
     if (!eix.ParseFromIstream(&input)) {
 
@@ -77,7 +77,7 @@ void ApplicationData::parseEixData()
     }
 
     // Merge the data for installed packages and eix info together.
-    combinedPackageList.load(eix, filters(), search());
+    combinedPackageList.load(eix, search());
 
     setupCategoryTreeModelData();
 }
@@ -100,12 +100,12 @@ void ApplicationData::addCategory(CategoryTreeItem *catItem)
     } else {
         const auto &cat = eix.category(catItem->categoryNumber());
         for (int pkgNumber = 0; pkgNumber < cat.package_size(); ++pkgNumber) {
-            VersionMap zombieList =
-                combinedPackageList.zombieVersions(cat.category(),
-                                           cat.package(pkgNumber).name());
+            VersionMap zombieList = combinedPackageList.zombieVersions(
+                cat.category(),
+                cat.package(pkgNumber).name());
             packageReportModel.addPackage(cat.category(),
-                                    cat.package(pkgNumber),
-                                    zombieList);
+                                          cat.package(pkgNumber),
+                                          zombieList);
         }
     }
 }
@@ -147,6 +147,11 @@ void ApplicationData::setupPackageModelData(CategoryTreeItem *catItem)
     packageReportModel.endUpdate();
 }
 
+QString ApplicationData::findRepositoryPath(const QString &name) const
+{
+    return _repositoryIndex.find(name);
+}
+
 /*!
  * Runs "eix --proto" in a separate process
  *
@@ -159,16 +164,20 @@ void ApplicationData::setupPackageModelData(CategoryTreeItem *catItem)
  */
 void ApplicationData::loadPortageData()
 {
+    // TODO: check the executable exists, if not then popup and terminate
+
     emit eixRunning(true);
+
+    _repositoryIndex.load();
 
     // Create the temporary file for the protobuf data. All we want is the
     // name because its going to be written by the eix process, but to get
     // that, it's necessary to open the temp file. It will be closed when
     // eixOutput is destroyed.
-    eixOutput = new QTemporaryFile();
-    eixOutput->open();
+    _eixOutput = new QTemporaryFile();
+    _eixOutput->open();
 
-    oEixProcess = new QProcess;
+    _eixProcess = new QProcess;
     QStringList eix_params = {"--proto"};
 
     if (filters()) {
@@ -198,24 +207,23 @@ void ApplicationData::loadPortageData()
         }
     }
 
-    oEixProcess->setStandardOutputFile(eixOutput->fileName());
+    _eixProcess->setStandardOutputFile(_eixOutput->fileName());
 
     // These signals get triggered by either the process completing, or by not
     // starting. Docs are not really clear on this, but experimentally it seems
     // if the executable file is not found the error happens but NOT the finish.
     // So going to assume they are exclusive. There are some other signals in
     // this class that I've decided to ignore.
-    connect(oEixProcess,
+    connect(_eixProcess,
             QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
             this,
             &ApplicationData::onEixFinished);
-    connect(oEixProcess,
+    connect(_eixProcess,
             &QProcess::errorOccurred,
             this,
             &ApplicationData::onEixError);
 
-    // TODO: check the executable exists
-    oEixProcess->start(ApplicationData::eixApp, eix_params);
+    _eixProcess->start(ApplicationData::eixApp, eix_params);
 }
 
 /*!
@@ -226,11 +234,11 @@ void ApplicationData::loadPortageData()
  */
 void ApplicationData::cleanupEixProcess()
 {
-    delete oEixProcess;
-    oEixProcess = nullptr;
+    delete _eixProcess;
+    _eixProcess = nullptr;
 
-    delete eixOutput;
-    eixOutput = nullptr;
+    delete _eixOutput;
+    _eixOutput = nullptr;
 
     emit eixRunning(false);
 }

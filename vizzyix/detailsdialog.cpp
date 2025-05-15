@@ -8,8 +8,6 @@
 #include <QDebug>
 
 // TODO - Implement Summary Tab
-// TODO - Implement Installed Files Tab
-// TODO - Implement Ebuild Tab
 // TODO - Implement USE Flags Tab
 // TODO - Implement Build Times Tab?
 
@@ -25,7 +23,7 @@ DetailsDialog::DetailsDialog(QWidget *parent)
     // Ensure first tab is set initially
     ui->tabWidget->setCurrentIndex(0);
 
-    highlighter = new EbuildSyntaxHighlighter(ui->textEbuild->document());
+    _highlighter = new EbuildSyntaxHighlighter(ui->textEbuild->document());
 }
 
 DetailsDialog::~DetailsDialog()
@@ -36,11 +34,11 @@ DetailsDialog::~DetailsDialog()
 void DetailsDialog::updateDetails()
 {
     ui->textSummary->clear();
-    ui->textSummary->append(repoEbuildFile.fileName());
+    ui->textSummary->append(_repoEbuildFile.fileName());
 
-    bool installed = pkgDir.exists();
+    bool installed = _pkgDir.exists();
     if (installed) {
-        ui->textSummary->append(pkgDir.absolutePath());
+        ui->textSummary->append(_pkgDir.absolutePath());
     }
 
     int current = ui->tabWidget->currentIndex();
@@ -57,9 +55,9 @@ void DetailsDialog::updateEbuildTab()
 {
     ui->textEbuild->clear();
     QTextCursor top = ui->textEbuild->textCursor();
-    repoEbuildFile.open(QIODevice::Text | QIODevice::ReadOnly);
-    while (!repoEbuildFile.atEnd()) {
-        QString line = repoEbuildFile.readLine();
+    _repoEbuildFile.open(QIODevice::Text | QIODevice::ReadOnly);
+    while (!_repoEbuildFile.atEnd()) {
+        QString line = _repoEbuildFile.readLine();
         if (line.endsWith('\n')) {
             line.chop(1);
         }
@@ -67,13 +65,13 @@ void DetailsDialog::updateEbuildTab()
     }
     ui->textEbuild->moveCursor(QTextCursor::Start);
     ui->textEbuild->ensureCursorVisible();
-    repoEbuildFile.close();
+    _repoEbuildFile.close();
 }
 
 void DetailsDialog::updateInstalledFilesTab()
 {
-    QFile contents{pkgDir.filePath("CONTENTS")};
-    installedFiles.clear();
+    QFile contents{_pkgDir.filePath("CONTENTS")};
+    _installedFiles.clear();
     if (contents.exists()) {
         contents.open(QIODevice::Text | QIODevice::ReadOnly);
         while (!contents.atEnd()) {
@@ -84,18 +82,18 @@ void DetailsDialog::updateInstalledFilesTab()
             QStringList fields = line.split(" ");
             // qDebug() << fields[1];
             if (fields[0] == "obj" || fields[0] == "dir") {
-                installedFiles.appendRow(new QStandardItem(fields[1]));
+                _installedFiles.appendRow(new QStandardItem(fields[1]));
             } else if (fields[0] == "sym") {
-                installedFiles.appendRow(
-                    new QStandardItem(QString("%1 %2 %3")
+                _installedFiles.appendRow(
+                    new QStandardItem(QStringLiteral("%1 %2 %3")
                                           .arg(fields[1])
                                           .arg(fields[2])
                                           .arg(fields[3])));
             }
         }
         contents.close();
-        installedFiles.sort(0);
-        ui->tableInstalledFiles->setModel(&installedFiles);
+        _installedFiles.sort(0);
+        ui->tableInstalledFiles->setModel(&_installedFiles);
     }
 }
 
@@ -115,27 +113,27 @@ void DetailsDialog::showEbuild(const QString &repository,
                                const QString &version)
 {
     bool changed =
-        (this->repository != repository || this->category != category ||
-         this->package != package || this->version != version);
+        (this->_repository != repository || this->_category != category ||
+         this->_package != package || this->_version != version);
 
-    this->repository = repository;
-    this->category = category;
-    this->package = package;
-    this->version = version;
+    this->_repository = repository;
+    this->_category = category;
+    this->_package = package;
+    this->_version = version;
 
     if (changed) {
         QString repoDir =
-            ApplicationData::data()->repositoryIndex.find(repository);
-        QString ebuildfile = QString("%1/%2/%3/%3-%4.ebuild")
+            ApplicationData::data()->findRepositoryPath(repository);
+        QString ebuildfile = QStringLiteral("%1/%2/%3/%3-%4.ebuild")
                                  .arg(repoDir)
                                  .arg(category)
                                  .arg(package)
                                  .arg(version);
-        repoEbuildFile.setFileName(ebuildfile);
-        QString pkgDirName = QString("%1/%2/%3-%4")
+        _repoEbuildFile.setFileName(ebuildfile);
+        QString pkgDirName = QStringLiteral("%1/%2/%3-%4")
                                  .arg(ApplicationData::packageDatabaseRoot)
                                  .arg(category, package, version);
-        pkgDir.setPath(pkgDirName);
+        _pkgDir.setPath(pkgDirName);
         updateDetails();
         show();
     }

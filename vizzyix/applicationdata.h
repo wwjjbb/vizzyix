@@ -37,6 +37,7 @@ class ApplicationData : public QObject
     void parseEixData();
     void setupCategoryTreeModelData();
     void setupPackageModelData(CategoryTreeItem *catItem);
+    QString findRepositoryPath(const QString &name) const;
 
   public:
     static constexpr auto eixApp = "/usr/bin/eix";
@@ -44,11 +45,9 @@ class ApplicationData : public QObject
     static constexpr auto portageEixFile = "/var/cache/eix/portage.eix";
     static constexpr auto reposConfFile = "/etc/portage/repos.conf";
     static constexpr auto packageDatabaseRoot = "/var/db/pkg";
+    static constexpr auto defaultRepositoryName = "";
 
   public:
-    /// Manages the list of known repositories and their locations
-    RepositoryIndex repositoryIndex;
-
     /// When the eix database was last loaded into memory
     QDateTime lastLoadTime;
 
@@ -77,26 +76,28 @@ class ApplicationData : public QObject
     void cleanupEixProcess();
     void addCategory(CategoryTreeItem *catItem);
 
-  private:
-    /// The current search filter string
-    QString oSearch{""};
-
-    /// The top level filter
-    SelectionFilter oSelectionFilter{All};
-
-    /// The handle for the eix process
-    QProcess *oEixProcess = nullptr;
-
-    /// Somewhere to catch the output from the eix process.
-    /// The content of the file is protobuf data.
-    QTemporaryFile *eixOutput = nullptr;
-
-  private:
-    /// The single instance of this class.
-    /// The unique_ptr ensures the object is properly disposed.
-    static std::unique_ptr<ApplicationData> oAppData;
-
   private slots:
     void onEixFinished(int exitCode, QProcess::ExitStatus);
     void onEixError(QProcess::ProcessError error);
+
+  private:
+    /// Manages the list of known repositories and their locations
+    RepositoryIndex _repositoryIndex;
+
+    /// The current search filter string
+    QString _search{""};
+
+    /// The top level filter
+    SelectionFilter _selectionFilter{All};
+
+    /// The handle for the eix process
+    QProcess *_eixProcess = nullptr;
+
+    /// Somewhere to catch the output from the eix process.
+    /// The content of the file is protobuf data.
+    QTemporaryFile *_eixOutput = nullptr;
+
+    /// The single instance of this class.
+    /// The unique_ptr ensures the object is properly disposed.
+    static std::unique_ptr<ApplicationData> _appData;
 };
